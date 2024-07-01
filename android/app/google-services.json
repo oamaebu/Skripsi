@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "851070823704",
+    "project_id": "mobilegame-6840c",
+    "storage_bucket": "mobilegame-6840c.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:851070823704:android:3fe3d828da763dfe14c26d",
+        "android_client_info": {
+          "package_name": "com.example.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB1DQiYkd-uWIbYw8SrxXp2LlMHnGue6k4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
