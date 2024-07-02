@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:app/models/isi_gambar.dart';
+import 'package:app/provider/anak_provider.dart';
 import 'package:app/provider/gambar_provider.dart';
 import 'package:app/provider/game_state_provider.dart';
 import 'package:app/widget/shake_transition.dart';
@@ -13,8 +14,10 @@ import 'package:app/widget/shake_transition.dart';
 class LevelPagetest extends StatefulWidget {
   final int level;
   final String childId;
+  final int idTema;
 
-  LevelPagetest({required this.level, required this.childId});
+  LevelPagetest(
+      {required this.level, required this.childId, required this.idTema});
 
   @override
   _LevelPagetestState createState() => _LevelPagetestState();
@@ -32,7 +35,7 @@ class _LevelPagetestState extends State<LevelPagetest> {
   final GlobalKey<ShakeTransitionState> _wrongImageKey2 =
       GlobalKey<ShakeTransitionState>();
 
-  int _wrongChoices = 0; // Counter for wrong choices
+  int _wrongChoices = 0;
 
   List<String> _shuffledImagePaths = [];
 
@@ -45,13 +48,13 @@ class _LevelPagetestState extends State<LevelPagetest> {
     final isiGambarProvider =
         Provider.of<IsiGambarProvider>(context, listen: false);
     isiGambarProvider.fetchIsiGambarList().then((_) {
-      _currentIsiGambarList = isiGambarProvider.getGambarBySkema();
+      _currentIsiGambarList = isiGambarProvider.getGambarBySkema(widget.idTema);
       if (_currentIsiGambarList.isNotEmpty) {
-        _currentIndex = 0; // Start from the first item
+        _currentIndex = 0;
         _shuffledImagePaths = _shuffleImagePaths(_currentIndex);
         _initPlayer();
       }
-      setState(() {}); // Refresh UI after fetching data
+      setState(() {});
     });
   }
 
@@ -72,17 +75,17 @@ class _LevelPagetestState extends State<LevelPagetest> {
     super.dispose();
   }
 
-  void _saveGameState(String time) {
+  void _saveGameState(String time, int anakId) {
     final now = DateTime.now();
-    final date = '${now.year}-${now.month}-${now.day}'; // Format: YYYY-MM-DD
+    final date = '${now.year}-${now.month}-${now.day}';
 
     final gameState = {
-      'id': null, // Set to null for auto-increment
-      'id_game': 1, // Set a default value for id_game
+      'id': null,
+      'id_game': 1,
       'waktu': time,
-      'id_anak': widget.childId, // Set the child ID
-      'tanggal': date, // Add the date to the gameState
-      'jumlah_salah': _wrongChoices, // Save the number of wrong choices
+      'id_anak': anakId,
+      'tanggal': date,
+      'jumlah_salah': _wrongChoices,
     };
     _gameStateProvider.addGameState(gameState);
     print('jumlah_salah: ${gameState['jumlah_salah']}');
@@ -100,11 +103,10 @@ class _LevelPagetestState extends State<LevelPagetest> {
     }
   }
 
-  void _completeLevel() {
+  void _completeLevel(int? anakId) {
     _stopwatch.stop();
-
     player.play(AssetSource('sound/correct.mp3'));
-    _saveGameState(_formatTime(_stopwatch.elapsed)); // Save the game state
+    _saveGameState(_formatTime(_stopwatch.elapsed), anakId!);
     AwesomeDialog(
       context: context,
       dialogType: DialogType.success,
@@ -113,7 +115,6 @@ class _LevelPagetestState extends State<LevelPagetest> {
       desc: 'You have completed the level.',
       btnOkOnPress: () {},
     )..show();
-    // Show the congratulatory pop-up animation
   }
 
   void _shakeWrongImage(GlobalKey<ShakeTransitionState> key) {
@@ -121,7 +122,6 @@ class _LevelPagetestState extends State<LevelPagetest> {
       _wrongChoices++;
       print('Wrong choices: $_wrongChoices');
     });
-
     player.play(AssetSource('sound/wrong.mp3'));
     key.currentState?.shake();
   }
@@ -140,9 +140,17 @@ class _LevelPagetestState extends State<LevelPagetest> {
         _currentIsiGambarList[index].gambar1,
         _currentIsiGambarList[index].gambar2,
         _currentIsiGambarList[index].gambar3,
-      ];
+      ].where((path) => path.isNotEmpty).toList();
 
-      imagePaths.shuffle(); // Shuffle the image paths
+      if (imagePaths.isEmpty) {
+        return [];
+      }
+
+      while (imagePaths.length < 3) {
+        imagePaths.add(imagePaths[Random().nextInt(imagePaths.length)]);
+      }
+
+      imagePaths.shuffle();
       return imagePaths;
     }
     return [];
@@ -150,6 +158,10 @@ class _LevelPagetestState extends State<LevelPagetest> {
 
   Widget _buildDraggableImage(
       String imagePath, GlobalKey<ShakeTransitionState> key) {
+    if (imagePath.isEmpty) {
+      return Container();
+    }
+
     return Container(
       color: Colors.white,
       child: Draggable<PuzzlePiece>(
@@ -157,11 +169,17 @@ class _LevelPagetestState extends State<LevelPagetest> {
         child: Image.file(
           File(imagePath),
           fit: BoxFit.contain,
+          errorBuilder: (context, error, stackTrace) {
+            return Icon(Icons.error);
+          },
         ),
         feedback: Image.file(
           File(imagePath),
           fit: BoxFit.contain,
           width: 150,
+          errorBuilder: (context, error, stackTrace) {
+            return Icon(Icons.error, size: 150);
+          },
         ),
         childWhenDragging: Container(),
         onDragEnd: (dragDetails) {
@@ -223,6 +241,9 @@ class _LevelPagetestState extends State<LevelPagetest> {
 
   @override
   Widget build(BuildContext context) {
+    final anakProvider = Provider.of<AnakProvider>(context);
+    final currentAnak = anakProvider.currentAnak;
+
     return Scaffold(
       appBar: AppBar(
         actions: [
@@ -286,13 +307,12 @@ class _LevelPagetestState extends State<LevelPagetest> {
                       child: DragTarget<PuzzlePiece>(
                         onAccept: (piece) {
                           if (piece.imagePath == imagePath) {
-                            _completeLevel();
+                            _completeLevel(currentAnak?.id);
                           } else {
                             _shakeWrongImage(_wrongImageKey1);
                           }
                         },
                         builder: (context, accepted, rejected) {
-                          // Display a randomly chosen image from _shuffledImagePaths
                           return imagePath.isNotEmpty
                               ? Image.file(File(imagePath), fit: BoxFit.contain)
                               : Container();
@@ -317,13 +337,19 @@ class _LevelPagetestState extends State<LevelPagetest> {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: _shuffledImagePaths.map((path) {
+                      children:
+                          _shuffledImagePaths.asMap().entries.map((entry) {
+                        int index = entry.key;
+                        String path = entry.value;
                         return Expanded(
-                          child: _buildDraggableImage(
+                          child: Padding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 8.0),
+                            child: _buildDraggableImage(
                               path,
-                              path == _shuffledImagePaths[0]
-                                  ? _wrongImageKey1
-                                  : _wrongImageKey2),
+                              index == 0 ? _wrongImageKey1 : _wrongImageKey2,
+                            ),
+                          ),
                         );
                       }).toList(),
                     ),

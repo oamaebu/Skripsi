@@ -1,8 +1,9 @@
 import 'package:app/screens/dashboard/components/Tambah_anak.dart';
-import 'package:app/screens/main/edit_skema.dart';
+
+import 'package:app/screens/main/add_gambar_tema.dart';
 import 'package:app/screens/main/list_level.dart';
 import 'package:app/screens/main/list_skema_edit.dart';
-import 'package:app/screens/main/tambah_gambar.dart';
+
 import 'package:app/screens/main/tambah_level.dart';
 import 'package:flutter/material.dart';
 import 'package:app/models/MyFiles.dart';
@@ -113,7 +114,7 @@ class FileInfoCardGridView extends StatelessWidget {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => AddIsiGambarPage()),
+                MaterialPageRoute(builder: (context) => AddIsiGambarPagetema()),
               );
             },
             child: FileInfoCard(

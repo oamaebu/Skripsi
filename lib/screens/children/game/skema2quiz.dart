@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:app/models/isi_gambar.dart';
+import 'package:app/provider/anak_provider.dart';
 import 'package:app/provider/gambar_provider.dart';
 import 'package:app/screens/children/game/garis/garis.dart';
 import 'package:audioplayers/audioplayers.dart';
@@ -14,6 +15,9 @@ import 'package:app/provider/game_state_provider.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
 
 class JigsawPuzzleScreenSkema2quiz extends StatefulWidget {
+  final int idTema;
+  const JigsawPuzzleScreenSkema2quiz({Key? key, required this.idTema})
+      : super(key: key);
   @override
   _JigsawPuzzleScreenState createState() => _JigsawPuzzleScreenState();
 }
@@ -48,7 +52,8 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema2quiz> {
         Provider.of<IsiGambarProvider>(context, listen: false);
     isiGambarProvider.fetchIsiGambarList().then((_) {
       setState(() {
-        _currentIsiGambarList = isiGambarProvider.getGambarBySkema();
+        _currentIsiGambarList =
+            isiGambarProvider.getGambarBySkema(widget.idTema);
         if (_currentIsiGambarList.isNotEmpty) {
           _currentIndex = 0;
           _loadCurrentLevel();
@@ -57,15 +62,15 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema2quiz> {
     });
   }
 
-  void _saveGameState(String time) {
+  void _saveGameState(String time, int idAnak) {
     final now = DateTime.now();
     final date = '${now.year}-${now.month}-${now.day}';
 
     final gameState = {
       'id': null,
-      'id_game': 2, // Assuming this is for the jigsaw puzzle game
+      'id_game': 1, // Assuming this is for the jigsaw puzzle game
       'waktu': time,
-      'id_anak': 0, // Set the child ID appropriately
+      'id_anak': idAnak, // Set the child ID appropriately
       'tanggal': date,
       'jumlah_salah': _wrongChoices,
     };
@@ -81,10 +86,10 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema2quiz> {
     return '$hours:$minutes:$seconds';
   }
 
-  void _completeLevel() {
+  void _completeLevel(int idAnak) {
     _stopwatch.stop();
     _player.play(AssetSource('sound/correct.mp3'));
-    _saveGameState(_formatTime(_stopwatch.elapsed));
+    _saveGameState(_formatTime(_stopwatch.elapsed), idAnak);
     AwesomeDialog(
       context: context,
       dialogType: DialogType.success,
@@ -221,6 +226,8 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema2quiz> {
     }
     screenWidth = MediaQuery.of(context).size.width;
     screenHeight = MediaQuery.of(context).size.height;
+    final anakProvider = Provider.of<AnakProvider>(context);
+    final currentAnak = anakProvider.currentAnak;
 
     return Scaffold(
       appBar: AppBar(
@@ -251,10 +258,9 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema2quiz> {
                     child: Container(
                       alignment: AlignmentDirectional.topEnd,
                       child: IconButton(
-                        icon: Icon(Icons.volume_up,
-                            size: 50.0, color: Colors.blue),
-                        onPressed: _checkCompletion1,
-                      ),
+                          icon: Icon(Icons.volume_up,
+                              size: 50.0, color: Colors.blue),
+                          onPressed: _initPlayer),
                     ),
                   ),
                   Row(
@@ -330,7 +336,8 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema2quiz> {
                                 child: _buildNextPiecePreview(),
                               ),
                               ElevatedButton(
-                                onPressed: _checkCompletion1,
+                                onPressed: () =>
+                                    _checkCompletion1(currentAnak?.id ?? 0),
                                 child: Text('Selesai'),
                               ),
                             ],
@@ -413,7 +420,7 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema2quiz> {
     );
   }
 
-  void _checkCompletion1() {
+  void _checkCompletion1(int idAnak) {
     bool allCorrect = true;
 
     // Check if all pieces are placed correctly
@@ -427,7 +434,7 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema2quiz> {
     if (pieces.isEmpty && displayedPieces.length == rows * cols) {
       // Check if puzzle is completed and all pieces are correctly placed
       if (allCorrect) {
-        _completeLevel();
+        _completeLevel(idAnak);
         showDialog(
           context: context,
           builder: (BuildContext context) {

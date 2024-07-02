@@ -1,32 +1,35 @@
 import 'dart:io';
 import 'package:app/models/isi_gambar.dart';
+import 'package:app/models/tema.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:provider/provider.dart';
 import 'package:app/provider/gambar_provider.dart';
+import 'package:app/provider/tema_provider.dart'; // Assuming you have a provider for Tema
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:path_provider/path_provider.dart';
 
-class AddIsiGambarPage extends StatefulWidget {
+class AddIsiGambarPagetema extends StatefulWidget {
   @override
   _AddIsiGambarPageState createState() => _AddIsiGambarPageState();
 }
 
-class _AddIsiGambarPageState extends State<AddIsiGambarPage> {
+class _AddIsiGambarPageState extends State<AddIsiGambarPagetema> {
   final _formKey = GlobalKey<FormState>();
   final _labelController = TextEditingController();
   final _suaraController = TextEditingController();
   String? _selectedTingkatKesulitan;
+  Tema? _selectedTema; // Changed to Tema type
   File? _gambar1;
   File? _gambar2;
   File? _gambar3;
   File? _suaraFile;
-  bool _statusSkema1 = false;
-  bool _statusSkema2 = false;
-  bool _statusSkema3 = false;
+  bool _status = false;
+
+  List<Tema> _temas = [];
 
   FlutterSoundRecorder? _recorder;
   bool _isRecording = false;
@@ -37,6 +40,7 @@ class _AddIsiGambarPageState extends State<AddIsiGambarPage> {
     super.initState();
     _recorder = FlutterSoundRecorder();
     _initRecorder();
+    _fetchTemas();
   }
 
   Future<void> _initRecorder() async {
@@ -120,19 +124,25 @@ class _AddIsiGambarPageState extends State<AddIsiGambarPage> {
     }
   }
 
+  Future<void> _fetchTemas() async {
+    await Provider.of<TemaProvider>(context, listen: false).fetchTemas();
+    setState(() {
+      _temas = Provider.of<TemaProvider>(context, listen: false).temas;
+    });
+  }
+
   void _addIsiGambar() {
     if (_formKey.currentState!.validate()) {
       final newIsiGambar = IsiGambar(
         id: null,
         label: _labelController.text,
         tingkatKesulitan: _selectedTingkatKesulitan ?? 'mudah',
+        idtema: _selectedTema?.id as int?, // Assigning tema id
         gambar1: _gambar1?.path ?? '',
         gambar2: _gambar2?.path ?? '',
         gambar3: _gambar3?.path ?? '',
         suara: _suaraFile?.path ?? _suaraController.text,
-        statusSkema1: _statusSkema1,
-        statusSkema2: _statusSkema2,
-        statusSkema3: _statusSkema3,
+        status: _status,
       );
 
       Provider.of<IsiGambarProvider>(context, listen: false)
@@ -154,7 +164,27 @@ class _AddIsiGambarPageState extends State<AddIsiGambarPage> {
           key: _formKey,
           child: ListView(
             children: [
-              
+              DropdownButtonFormField<Tema>(
+                value: _selectedTema,
+                onChanged: (newValue) {
+                  setState(() {
+                    _selectedTema = newValue;
+                  });
+                },
+                decoration: InputDecoration(labelText: 'Tema'),
+                items: _temas.map((tema) {
+                  return DropdownMenuItem<Tema>(
+                    value: tema,
+                    child: Text(tema.namaTema),
+                  );
+                }).toList(),
+                validator: (value) {
+                  if (value == null) {
+                    return 'Please select a tema';
+                  }
+                  return null;
+                },
+              ),
               TextFormField(
                 controller: _labelController,
                 decoration: InputDecoration(labelText: 'Label'),
@@ -239,31 +269,14 @@ class _AddIsiGambarPageState extends State<AddIsiGambarPage> {
               SizedBox(height: 16.0),
               SwitchListTile(
                 title: Text('Status Skema 1'),
-                value: _statusSkema1,
+                value: _status,
                 onChanged: (value) {
                   setState(() {
-                    _statusSkema1 = value;
+                    _status = value;
                   });
                 },
               ),
-              SwitchListTile(
-                title: Text('Status Skema 2'),
-                value: _statusSkema2,
-                onChanged: (value) {
-                  setState(() {
-                    _statusSkema2 = value;
-                  });
-                },
-              ),
-              SwitchListTile(
-                title: Text('Status Skema 3'),
-                value: _statusSkema3,
-                onChanged: (value) {
-                  setState(() {
-                    _statusSkema3 = value;
-                  });
-                },
-              ),
+              
               SizedBox(height: 16.0),
               ElevatedButton(
                 onPressed: _addIsiGambar,

@@ -1,5 +1,6 @@
 import 'package:app/models/Anak.dart';
 import 'package:app/models/isi_gambar.dart';
+import 'package:app/models/tema.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
@@ -25,8 +26,8 @@ class DatabaseHelper {
   // GAME Table
   String TemaTable = 'Tema';
   String TemaColId = 'id';
-  String TemaColIDGambar = 'id_gambar';
   String TemaColInamaTema = 'namaTema';
+   String TemaColStatus = 'status';
 
   // PUZZLE Table
   String puzzleTable = 'puzzle';
@@ -40,15 +41,15 @@ class DatabaseHelper {
 
   String gambarTable = 'IsiGambar';
   String gambarColId = 'id';
+  String gambarColLIDtema = 'id_tema';
   String gambarColLabel = 'label';
   String gambarColTingkatKesulitan = 'TingkatKesulitan';
   String gambarColgambar1 = 'Gambar1';
   String gambarColgambar2 = 'Gambar2';
   String gambarColIdgambar3 = 'Gambar3';
-  String gambarColIdStatusSkema1 = 'StatusSkema1';
-  String gambarColStatusSkema2 = 'StatusSkema2';
-  String gambarColIdStatusSkema3 = 'StatusSkema3';
   String gambarColIdSuara = 'suara';
+  String gambarColIdStatus = 'Status';
+
 
   // GARIS Table
   String garisTable = 'garis';
@@ -103,14 +104,15 @@ class DatabaseHelper {
       'CREATE TABLE $gambarTable('
       '$gambarColId INTEGER PRIMARY KEY, '
       '$gambarColLabel TEXT, '
+      '$gambarColLIDtema INTEGER, '
       '$gambarColTingkatKesulitan TEXT, '
       '$gambarColgambar1 TEXT, '
       '$gambarColgambar2 TEXT, '
       '$gambarColIdgambar3 TEXT, '
       '$gambarColIdSuara TEXT, '
-      '$gambarColIdStatusSkema1 BOOLEAN, '
-      '$gambarColStatusSkema2 BOOLEAN, '
-      '$gambarColIdStatusSkema3 BOOLEAN'
+      '$gambarColIdStatus BOOLEAN, '
+      
+      'FOREIGN KEY ($gambarColLIDtema) REFERENCES $TemaTable ($TemaColId)'
       ')',
     );
 
@@ -118,7 +120,7 @@ class DatabaseHelper {
       'CREATE TABLE $garisTable($garisColId INTEGER PRIMARY KEY, $garisColLevel INTEGER, $garisColKelas TEXT, $garisColContent TEXT, $garisColIdGame INTEGER, FOREIGN KEY ($garisColIdGame) REFERENCES $gameTable ($gameColId))',
     );
     await db.execute(
-        'CREATE TABLE $TemaTable($TemaColId INTEGER PRIMARY KEY, $TemaColInamaTema TEXT, FOREIGN KEY ($TemaColIDGambar) REFERENCES $gambarTable ($gambarColId))');
+        'CREATE TABLE $TemaTable($TemaColId INTEGER PRIMARY KEY, $TemaColInamaTema TEXT, $TemaColStatus BOOLEAN)');
     await db.execute(
       'CREATE TABLE $gameStateTable($gameStateColId INTEGER PRIMARY KEY, $gameStateColTanggal TEXT, $gameStateColIdGame INTEGER , $gameStateColSalah INTEGER, $gameStateColWaktu TIME, $gameStateColIdAnak INTEGER, FOREIGN KEY ($gameStateColIdGame) REFERENCES $gameTable ($gameColId), FOREIGN KEY ($gameStateColIdAnak) REFERENCES $anakTable ($anakColId))',
     );
@@ -145,14 +147,13 @@ class DatabaseHelper {
       gambarTable,
       columns: [
         gambarColId,
+        gambarColLIDtema,
         gambarColLabel,
         gambarColTingkatKesulitan,
         gambarColgambar1,
         gambarColgambar2,
         gambarColIdgambar3,
-        gambarColIdStatusSkema1,
-        gambarColStatusSkema2,
-        gambarColIdStatusSkema3,
+        gambarColIdStatus,
         gambarColIdSuara,
       ],
       where: '$gambarColId = ?',
@@ -205,30 +206,71 @@ class DatabaseHelper {
     final int result = await db.insert(anakTable, Anak.toMap());
     return result;
   }
-
-  Future<int> insertTema(Map<String, dynamic> row) async {
-    Database db = await this.db;
-    return await db.insert(TemaTable, row);
+  
+  Future<List<Map<String, dynamic>>> getTemaMapList() async {
+    Database db = await instance.db;
+    return await db.query('tema');
   }
 
-  Future<List<Map<String, dynamic>>> queryAllTema() async {
-    Database db = await this.db;
-    return await db.query(TemaTable);
+  Future<Tema?> getTemaById(int id) async {
+    Database db = await instance.db;
+    List<Map<String, dynamic>> maps = await db.query(
+      'tema',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+
+    if (maps.isNotEmpty) {
+      return Tema.fromMap(maps.first);
+    } else {
+      return null;
+    }
   }
 
-  Future<int> updateTema(Map<String, dynamic> row) async {
-    Database db = await this.db;
-    int id = row[TemaColId];
-    return await db
-        .update(TemaTable, row, where: '$TemaColId = ?', whereArgs: [id]);
+  Future<int> insertTema(Tema tema) async {
+    Database db = await instance.db;
+    return await db.insert('tema', tema.toMap());
+  }
+
+  Future<int> updateTema(Tema tema) async {
+    Database db = await instance.db;
+    return await db.update(
+      'tema',
+      tema.toMap(),
+      where: 'id = ?',
+      whereArgs: [tema.id],
+    );
   }
 
   Future<int> deleteTema(int id) async {
-    Database db = await this.db;
-    return await db.delete(TemaTable, where: '$TemaColId = ?', whereArgs: [id]);
+    Database db = await instance.db;
+    return await db.delete(
+      'tema',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+  Future<int> updateAnak(Anak anak) async {
+    final db = await this.db;
+    final int result = await db.update(
+      anakTable,
+      anak.toMap(),
+      where: '$anakColId = ?',
+      whereArgs: [anak.id],
+    );
+    return result;
   }
 
-// CRUD Operations for ISI_GAMBAR Table
+  Future<int> deleteAnak(int id) async {
+    final db = await this.db;
+    final int result = await db.delete(
+      anakTable,
+      where: '$anakColId = ?',
+      whereArgs: [id],
+    );
+    return result;
+  }
+
   Future<List<IsiGambar>> getIsiGambarList() async {
     final db = await this.db;
     final List<Map<String, dynamic>> result = await db.query(gambarTable);
@@ -270,27 +312,6 @@ class DatabaseHelper {
       where: '$gambarColId = ?',
       whereArgs: [id],
     );
-  }
-
-  Future<int> updateAnak(Anak anak) async {
-    final db = await this.db;
-    final int result = await db.update(
-      anakTable,
-      anak.toMap(),
-      where: '$anakColId = ?',
-      whereArgs: [anak.id],
-    );
-    return result;
-  }
-
-  Future<int> deleteAnak(int id) async {
-    final db = await this.db;
-    final int result = await db.delete(
-      anakTable,
-      where: '$anakColId = ?',
-      whereArgs: [id],
-    );
-    return result;
   }
 
   // CRUD Operations for GAME Table

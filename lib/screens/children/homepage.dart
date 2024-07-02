@@ -1,3 +1,5 @@
+import 'package:app/models/Anak.dart';
+import 'package:app/provider/tema_provider.dart';
 import 'package:app/screens/children/game/skema2quiz.dart';
 import 'package:app/screens/children/game/skema3.dart';
 import 'package:flutter/material.dart';
@@ -25,33 +27,38 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   late List<Map<String, dynamic>> allGames;
   late Future<void> _fetchAnakFuture;
+  late int? activeTemaId; // Store active tema id here
 
   @override
   void initState() {
     super.initState();
+    activeTemaId =
+        Provider.of<TemaProvider>(context, listen: false).getActiveTemaId();
 
     // Define all possible games
     allGames = [
       {
         "title": "skema1",
         "icon": Icons.menu_book,
-        "route": widget.quiz ? LevelPagetest(childId: '1', level: 1) : Skema1(),
+        "route": widget.quiz
+            ? LevelPagetest(childId: '1', level: 1, idTema: activeTemaId!)
+            : Skema1(idTema: activeTemaId!),
         "skemaId": '0'
       },
       {
         "title": "skema2",
         "icon": Icons.numbers,
         "route": widget.quiz
-            ? JigsawPuzzleScreenSkema2quiz()
-            : JigsawPuzzleScreenSkema2(),
+            ? JigsawPuzzleScreenSkema2quiz(idTema: activeTemaId!)
+            : JigsawPuzzleScreenSkema2(idTema: activeTemaId!),
         "skemaId": '1'
       },
       {
         "title": "skema3",
         "icon": Icons.category,
         "route": widget.quiz
-            ? JigsawPuzzleScreenSkema3quiz()
-            : JigsawPuzzleScreenSkema3(),
+            ? JigsawPuzzleScreenSkema3quiz(idTema: activeTemaId!)
+            : JigsawPuzzleScreenSkema3(idTema: activeTemaId!),
         "skemaId": '2'
       },
     ];

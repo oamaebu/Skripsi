@@ -12,6 +12,8 @@ import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 
 class JigsawPuzzleScreenSkema3 extends StatefulWidget {
+      final int idTema;
+  const JigsawPuzzleScreenSkema3({Key? key, required this.idTema}) : super(key: key);
   @override
   _JigsawPuzzleScreenState createState() => _JigsawPuzzleScreenState();
 }
@@ -42,7 +44,7 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3> {
         Provider.of<IsiGambarProvider>(context, listen: false);
     isiGambarProvider.fetchIsiGambarList().then((_) {
       setState(() {
-        _currentIsiGambarList = isiGambarProvider.getGambarBySkema();
+        _currentIsiGambarList = isiGambarProvider.getGambarBySkema(widget.idTema);
         if (_currentIsiGambarList.isNotEmpty) {
           _currentIndex = 0;
           _loadCurrentLevel();

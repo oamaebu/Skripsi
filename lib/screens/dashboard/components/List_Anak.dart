@@ -63,11 +63,17 @@ class ListAnakState extends State<ListAnak> {
                           child: Text(anak.nama),
                         ),
                       ),
-                      DataCell(Text(anak.kelas.toString())),
+                      DataCell(Text(anak.id.toString())),
                       DataCell(
                         ElevatedButton(
                           onPressed: () {
-                            
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => HomePage(quiz: false),
+                              ),
+                            );
+                            anakProvider.setCurrentAnak(anak);
                           },
                           child: Text('Main Sekarang'),
                         ),

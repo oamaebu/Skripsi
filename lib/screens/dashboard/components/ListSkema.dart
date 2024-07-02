@@ -1,7 +1,7 @@
 import 'package:app/constants.dart';
 import 'package:app/models/skema.dart';
 import 'package:app/provider/skema_provider.dart';
-import 'package:app/screens/main/edit_skema.dart';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -55,15 +55,7 @@ class ListSkemaState extends State<ListSkema> {
                   DataCell(
                     ElevatedButton(
                       onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => UbahStatusSkemaPage(
-                              skema:
-                                  skemaName, // Pass skemaName instead of skema object
-                            ),
-                          ),
-                        );
+                  
                       },
                       child: Text('Edit'),
                     ),

@@ -1,17 +1,17 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:app/models/isi_gambar.dart';
 import 'package:app/provider/gambar_provider.dart';
+import 'dart:async';
 
 class Skema1 extends StatefulWidget {
+  @override
   final int idTema;
 
+  
   const Skema1({Key? key, required this.idTema}) : super(key: key);
-
-  @override
   _Skema1State createState() => _Skema1State();
 }
 
@@ -20,11 +20,15 @@ class _Skema1State extends State<Skema1> {
   bool _isPlayerInitialized = false;
   List<IsiGambar> _currentIsiGambarList = [];
   int _currentIndex = 0;
+  late Stopwatch _stopwatch;
+  late Timer _timer;
 
   @override
   void initState() {
     super.initState();
     _player = AudioPlayer();
+    _stopwatch = Stopwatch()..start();
+    _startTimer();
     _initPlayer();
 
     final isiGambarProvider =
@@ -36,6 +40,13 @@ class _Skema1State extends State<Skema1> {
         _initPlayer();
       }
       setState(() {}); // Refresh UI after fetching data
+    });
+  }
+
+  void _startTimer() {
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+      setState(
+          () {}); // This will rebuild the widget to update the timer display
     });
   }
 
@@ -57,12 +68,20 @@ class _Skema1State extends State<Skema1> {
   @override
   void dispose() {
     _player.dispose();
+    _stopwatch.stop();
+    _timer.cancel();
     super.dispose();
+  }
+
+  void _resetStopwatch() {
+    _stopwatch.reset();
+    _stopwatch.start();
   }
 
   void _navigateToLevel(int index) {
     setState(() {
       _currentIndex = index;
+      _resetStopwatch(); // Reset the timer when changing levels
     });
     _initPlayer();
   }
@@ -72,6 +91,7 @@ class _Skema1State extends State<Skema1> {
     return Scaffold(
       appBar: AppBar(
         actions: [
+          TimerDisplay(stopwatch: _stopwatch),
           Container(
             alignment: AlignmentDirectional.topEnd,
             padding: EdgeInsets.all(8.0),
@@ -154,65 +174,45 @@ class _Skema1State extends State<Skema1> {
   }
 
   Widget _buildImages(IsiGambar isiGambar) {
-    List<String> images = [];
-    if (isiGambar.gambar1.isNotEmpty) images.add(isiGambar.gambar1);
-    if (isiGambar.gambar2.isNotEmpty) images.add(isiGambar.gambar2);
-    if (isiGambar.gambar3.isNotEmpty) images.add(isiGambar.gambar3);
-
     return Column(
       children: [
-        if (images.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Image.file(
-              File(images[0]),
-              fit: BoxFit.contain,
-              width: MediaQuery.of(context).size.width *
-                  0.4, // Use full width of the screen
-              height: MediaQuery.of(context).size.width *
-                  0.4, // Maintain aspect ratio
-            ),
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Image.file(
+            File(isiGambar.gambar1),
+            width: 180,
+            height: 180,
+            fit: BoxFit.contain,
           ),
-        if (images.length > 1)
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 8.0, right: 8.0),
-                  child: Image.file(
-                    File(images[1]),
-                    fit: BoxFit.contain,
-                    width: MediaQuery.of(context).size.width *
-                        0.4, // Adjust width as needed
-                    height: MediaQuery.of(context).size.width *
-                        0.4, // Adjust height as needed
-                  ),
-                ),
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Image.file(
+                File(isiGambar.gambar2),
+                width: 180,
+                height: 180,
+                fit: BoxFit.contain,
               ),
-              if (images.length > 2)
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 8.0, right: 8.0),
-                    child: Image.file(
-                      File(images[2]),
-                      fit: BoxFit.contain,
-                      width: MediaQuery.of(context).size.width *
-                          0.4, // Adjust width as needed
-                      height: MediaQuery.of(context).size.width *
-                          0.4, // Adjust height as needed
-                    ),
-                  ),
-                ),
-            ],
-          ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Image.file(
+                File(isiGambar.gambar3),
+                width: 180,
+                height: 180,
+                fit: BoxFit.contain,
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }
 
   Widget _buildNavigationButtons() {
-    final double iconSize = MediaQuery.of(context).size.width * 0.15;
-
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
@@ -225,7 +225,7 @@ class _Skema1State extends State<Skema1> {
           ),
           child: IconButton(
             icon: Icon(Icons.arrow_back),
-            iconSize: iconSize,
+            iconSize: 48,
             color: _currentIndex > 0 ? Colors.white : Colors.grey,
             onPressed: (_currentIndex > 0)
                 ? () => _navigateToLevel(_currentIndex - 1)
@@ -244,7 +244,7 @@ class _Skema1State extends State<Skema1> {
           ),
           child: IconButton(
             icon: Icon(Icons.arrow_forward),
-            iconSize: iconSize,
+            iconSize: 48,
             color: _currentIndex < _currentIsiGambarList.length - 1
                 ? Colors.white
                 : Colors.grey,
@@ -256,5 +256,29 @@ class _Skema1State extends State<Skema1> {
         ),
       ],
     );
+  }
+}
+
+class TimerDisplay extends StatelessWidget {
+  final Stopwatch stopwatch;
+
+  TimerDisplay({required this.stopwatch});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Text(
+        _formatDuration(stopwatch.elapsed),
+        style: TextStyle(fontSize: 18, color: Colors.white),
+      ),
+    );
+  }
+
+  String _formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
+    String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60));
+    return "$twoDigitMinutes:$twoDigitSeconds";
   }
 }

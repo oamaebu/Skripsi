@@ -1,4 +1,5 @@
 import 'package:app/screens/dashboard/components/ListSkema.dart';
+import 'package:app/screens/dashboard/components/List_Tema.dart';
 import 'package:flutter/material.dart';
 import 'package:app/responsive.dart';
 import 'package:app/screens/dashboard/components/list_anak.dart';
@@ -26,6 +27,8 @@ class DashboardScreen extends StatelessWidget {
                       MyFiles(),
                       SizedBox(height: defaultPadding),
                       ListSkema(),
+                      SizedBox(height: defaultPadding),
+                      ListTema(),
                       SizedBox(height: 10),
                       ListAnak(),
                       if (Responsive.isMobile(context))

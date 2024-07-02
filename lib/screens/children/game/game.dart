@@ -17,7 +17,7 @@ class GamePage extends StatelessWidget {
 
     isiGambarProvider.fetchIsiGambarList();
     final List<IsiGambar> currentIsiGambarList =
-        isiGambarProvider.getGambarBySkema();
+        isiGambarProvider.getGambarBySkema(1);
     print(currentIsiGambarList);
     return Scaffold(
       appBar: AppBar(
@@ -60,12 +60,7 @@ class GamePage extends StatelessWidget {
 
                   return GestureDetector(
                     onTap: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => Skema1(),
-                        ),
-                      );
+                     
                     },
                     child: Card(
                       color: Colors.white,

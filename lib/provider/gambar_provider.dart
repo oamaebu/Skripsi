@@ -13,8 +13,24 @@ class IsiGambarProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  List<IsiGambar> getGambarBySkema() {
-    return _isiGambarList.where((isiGambar) => isiGambar.statusSkema1).toList();
+  List<IsiGambar> getGambarBySkema(int idTema) {
+    // Define the custom order
+    final List<String> difficultyOrder = ['mudah', 'sedang', 'sulit'];
+
+    // Filter and sort the list
+    List<IsiGambar> filteredList = _isiGambarList
+        .where((isiGambar) =>
+            isiGambar.idtema == idTema && isiGambar.status == true)
+        .toList();
+
+    // Sort the list by the custom order
+    filteredList.sort((a, b) {
+      return difficultyOrder
+          .indexOf(a.tingkatKesulitan)
+          .compareTo(difficultyOrder.indexOf(b.tingkatKesulitan));
+    });
+
+    return filteredList;
   }
 
   Future<void> fetchIsiGambarByTingkatKesulitan(String tingkatKesulitan) async {
@@ -46,7 +62,7 @@ class IsiGambarProvider with ChangeNotifier {
   Future<void> updateIsiGambar(IsiGambar isiGambar) async {
     await _dbHelper.updateIsiGambar(isiGambar);
     await fetchIsiGambarList();
-  } 
+  }
 
   Future<void> deleteIsiGambar(int? id) async {
     await _dbHelper.deleteIsiGambar(id!);

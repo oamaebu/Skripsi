@@ -1,5 +1,6 @@
 import 'package:app/models/dashboard/children/data.dart';
 import 'package:app/provider/gambar_provider.dart';
+import 'package:app/provider/tema_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -39,6 +40,7 @@ void main() async {
         ChangeNotifierProvider(create: (context) => GameStateProvider()),
         ChangeNotifierProvider(create: (context) => IsiGambarProvider()),
         ChangeNotifierProvider(create: (context) => SkemaProvider()),
+        ChangeNotifierProvider(create: (context) => TemaProvider()),
         ChangeNotifierProvider(create: (_) => UserModel()),
       ],
       child: App(),

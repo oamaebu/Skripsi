@@ -6,15 +6,16 @@ import 'package:provider/provider.dart';
 
 import 'package:app/models/isi_gambar.dart';
 
-class UbahStatusSkemaPage extends StatefulWidget {
-  final String skema;
+class UbahStatusTemaPage extends StatefulWidget {
+  final int idtema;
 
-  UbahStatusSkemaPage({Key? key, required this.skema}) : super(key: key);
+  UbahStatusTemaPage({Key? key, required this.idtema}) : super(key: key);
+
   @override
-  _UbahStatusSkemaPageState createState() => _UbahStatusSkemaPageState();
+  _UbahStatusTemaPageState createState() => _UbahStatusTemaPageState();
 }
 
-class _UbahStatusSkemaPageState extends State<UbahStatusSkemaPage> {
+class _UbahStatusTemaPageState extends State<UbahStatusTemaPage> {
   String? _selectedTingkatKesulitan;
 
   @override
@@ -23,7 +24,7 @@ class _UbahStatusSkemaPageState extends State<UbahStatusSkemaPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Ubah Status Skema'),
+        title: Text('Ubah Status Tema'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -51,32 +52,25 @@ class _UbahStatusSkemaPageState extends State<UbahStatusSkemaPage> {
             Expanded(
               child: Consumer<IsiGambarProvider>(
                 builder: (context, provider, _) {
+                  // Filter the isiGambarList based on idtema
+                  final filteredList = provider.isiGambarList
+                      .where((isiGambar) => isiGambar.idtema == widget.idtema)
+                      .toList();
+
                   return ListView.builder(
-                    itemCount: provider.isiGambarList.length,
+                    itemCount: filteredList.length,
                     itemBuilder: (context, index) {
-                      final isiGambar = provider.isiGambarList[index];
+                      final isiGambar = filteredList[index];
                       return Padding(
                         padding: const EdgeInsets.only(top: 8.0),
                         child: ListTile(
                           leading: Image.file(File(isiGambar.gambar1)),
                           title: Text(isiGambar.label),
                           trailing: Switch(
-                            value: getStatusSkemaValue(isiGambar),
+                            value: isiGambar.status, // Use the status field
                             onChanged: (value) {
                               setState(() {
-                                switch (widget.skema) {
-                                  case 'statusSkema1':
-                                    isiGambar.statusSkema1 = value;
-                                    break;
-                                  case 'statusSkema2':
-                                    isiGambar.statusSkema2 = value;
-                                    break;
-                                  case 'statusSkema3':
-                                    isiGambar.statusSkema3 = value;
-                                    break;
-                                  default:
-                                    break;
-                                }
+                                isiGambar.status = value; // Update the status
                               });
                               provider.updateIsiGambar(isiGambar);
                             },
@@ -92,18 +86,5 @@ class _UbahStatusSkemaPageState extends State<UbahStatusSkemaPage> {
         ),
       ),
     );
-  }
-
-  bool getStatusSkemaValue(IsiGambar isiGambar) {
-    switch (widget.skema) {
-      case 'statusSkema1':
-        return isiGambar.statusSkema1;
-      case 'statusSkema2':
-        return isiGambar.statusSkema2;
-      case 'statusSkema3':
-        return isiGambar.statusSkema3;
-      default:
-        return false;
-    }
   }
 }
