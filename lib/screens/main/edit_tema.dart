@@ -17,6 +17,7 @@ class UbahStatusTemaPage extends StatefulWidget {
 
 class _UbahStatusTemaPageState extends State<UbahStatusTemaPage> {
   String? _selectedTingkatKesulitan;
+  bool _isAllChecked = false;
 
   @override
   Widget build(BuildContext context) {
@@ -35,6 +36,7 @@ class _UbahStatusTemaPageState extends State<UbahStatusTemaPage> {
               onChanged: (newValue) {
                 setState(() {
                   _selectedTingkatKesulitan = newValue;
+                  _isAllChecked = false; // Reset the check all status
                 });
                 if (newValue != null) {
                   isiGambarProvider.fetchIsiGambarByTingkatKesulitan(newValue);
@@ -57,27 +59,47 @@ class _UbahStatusTemaPageState extends State<UbahStatusTemaPage> {
                       .where((isiGambar) => isiGambar.idtema == widget.idtema)
                       .toList();
 
-                  return ListView.builder(
-                    itemCount: filteredList.length,
-                    itemBuilder: (context, index) {
-                      final isiGambar = filteredList[index];
-                      return Padding(
-                        padding: const EdgeInsets.only(top: 8.0),
-                        child: ListTile(
-                          leading: Image.file(File(isiGambar.gambar1)),
-                          title: Text(isiGambar.label),
-                          trailing: Switch(
-                            value: isiGambar.status, // Use the status field
-                            onChanged: (value) {
-                              setState(() {
-                                isiGambar.status = value; // Update the status
-                              });
-                              provider.updateIsiGambar(isiGambar);
-                            },
-                          ),
+                  return Column(
+                    children: [
+                      CheckboxListTile(
+                        title: Text('Aktifkan Semua'),
+                        value: _isAllChecked,
+                        onChanged: (value) {
+                          setState(() {
+                            _isAllChecked = value!;
+                          });
+                          provider.updateAllStatuses(
+                              filteredList, _isAllChecked);
+                        },
+                      ),
+                      SizedBox(height: 16.0),
+                      Expanded(
+                        child: ListView.builder(
+                          itemCount: filteredList.length,
+                          itemBuilder: (context, index) {
+                            final isiGambar = filteredList[index];
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 8.0),
+                              child: ListTile(
+                                leading: Image.file(File(isiGambar.gambar1)),
+                                title: Text(isiGambar.label),
+                                trailing: Switch(
+                                  value:
+                                      isiGambar.status, // Use the status field
+                                  onChanged: (value) {
+                                    setState(() {
+                                      isiGambar.status =
+                                          value; // Update the status
+                                    });
+                                    provider.updateIsiGambar(isiGambar);
+                                  },
+                                ),
+                              ),
+                            );
+                          },
                         ),
-                      );
-                    },
+                      ),
+                    ],
                   );
                 },
               ),

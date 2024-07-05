@@ -30,7 +30,7 @@ class ListAnakState extends State<ListAnak> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "Recent Files",
+            "List Anak",
             style: Theme.of(context).textTheme.titleMedium,
           ),
           SizedBox(
@@ -59,6 +59,7 @@ class ListAnakState extends State<ListAnak> {
                                 ),
                               ),
                             );
+                            anakProvider.setCurrentAnak(anak);
                           },
                           child: Text(anak.nama),
                         ),

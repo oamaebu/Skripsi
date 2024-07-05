@@ -1,284 +1,179 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
-import 'package:audioplayers/audioplayers.dart';
 import 'package:app/models/isi_gambar.dart';
 import 'package:app/provider/gambar_provider.dart';
-import 'dart:async';
 
-class Skema1 extends StatefulWidget {
-  @override
+class GridPage extends StatefulWidget {
   final int idTema;
 
-  
-  const Skema1({Key? key, required this.idTema}) : super(key: key);
-  _Skema1State createState() => _Skema1State();
+  const GridPage({Key? key, required this.idTema}) : super(key: key);
+
+  @override
+  _GridPageState createState() => _GridPageState();
 }
 
-class _Skema1State extends State<Skema1> {
-  late AudioPlayer _player;
-  bool _isPlayerInitialized = false;
-  List<IsiGambar> _currentIsiGambarList = [];
-  int _currentIndex = 0;
-  late Stopwatch _stopwatch;
-  late Timer _timer;
+class _GridPageState extends State<GridPage> {
+  List<String> _images = [];
+  List<String> _correctImages = [];
+  List<String> _wrongImages = [];
+  List<bool> _clicked = List.generate(6, (index) => false);
+  List<IsiGambar> allImages = [];
+  int currentLevel = 1;
+  int totalLevels = 0;
 
   @override
   void initState() {
     super.initState();
-    _player = AudioPlayer();
-    _stopwatch = Stopwatch()..start();
-    _startTimer();
-    _initPlayer();
-
-    final isiGambarProvider =
-        Provider.of<IsiGambarProvider>(context, listen: false);
-    isiGambarProvider.fetchIsiGambarList().then((_) {
-      _currentIsiGambarList = isiGambarProvider.getGambarBySkema(widget.idTema);
-      if (_currentIsiGambarList.isNotEmpty) {
-        _currentIndex = 0; // Start from the first item
-        _initPlayer();
-      }
-      setState(() {}); // Refresh UI after fetching data
-    });
+    _fetchImages();
   }
 
-  void _startTimer() {
-    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
-      setState(
-          () {}); // This will rebuild the widget to update the timer display
-    });
+  Future<void> _fetchImages() async {
+    final provider = Provider.of<IsiGambarProvider>(context, listen: false);
+    await provider.fetchIsiGambarList();
+
+    allImages = provider.getGambarByTema(widget.idTema);
+    totalLevels = allImages.length ~/ 2; // Integer division by 2
+    print('Total levels: $totalLevels');
+
+    if (allImages.length < 2) {
+      showNotEnoughImagesDialog();
+      return;
+    }
+
+    _setupCurrentLevel();
   }
 
-  Future<void> _initPlayer() async {
-    setState(() {
-      _isPlayerInitialized = true;
-    });
+  void _setupCurrentLevel() {
+    allImages.shuffle();
 
-    if (_currentIsiGambarList.isNotEmpty &&
-        _currentIndex >= 0 &&
-        _currentIndex < _currentIsiGambarList.length) {
-      final isiGambar = _currentIsiGambarList[_currentIndex];
-      if (isiGambar.suara != null && isiGambar.suara!.isNotEmpty) {
-        await _player.play(DeviceFileSource(isiGambar.suara!));
-      }
+    _correctImages = [
+      allImages[0].gambar1,
+      allImages[0].gambar2,
+      allImages[0].gambar3,
+    ];
+    allImages.removeAt(0);
+
+    _wrongImages = [
+      allImages[0].gambar1,
+      allImages[0].gambar2,
+      allImages[0].gambar3,
+    ];
+    allImages.removeAt(0);
+
+    _images = List.from(_correctImages)..addAll(_wrongImages);
+    _images.shuffle();
+    setState(() {});
+  }
+
+  void _goToNextLevel() {
+    print('Current level: $currentLevel, Total levels: $totalLevels');
+    if (currentLevel < totalLevels) {
+      currentLevel++;
+      _clicked = List.generate(6, (index) => false);
+      _setupCurrentLevel();
+    } else {
+      showNotEnoughImagesDialog();
     }
   }
 
-  @override
-  void dispose() {
-    _player.dispose();
-    _stopwatch.stop();
-    _timer.cancel();
-    super.dispose();
-  }
-
-  void _resetStopwatch() {
-    _stopwatch.reset();
-    _stopwatch.start();
-  }
-
-  void _navigateToLevel(int index) {
-    setState(() {
-      _currentIndex = index;
-      _resetStopwatch(); // Reset the timer when changing levels
-    });
-    _initPlayer();
+  void showNotEnoughImagesDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Game Over'),
+        content: Text('You have completed all available levels.'),
+        actions: <Widget>[
+          TextButton(
+            child: Text('OK'),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        actions: [
-          TimerDisplay(stopwatch: _stopwatch),
-          Container(
-            alignment: AlignmentDirectional.topEnd,
-            padding: EdgeInsets.all(8.0),
-            child: GestureDetector(
-              onTap: () {
-                if (_isPlayerInitialized) {
-                  _initPlayer();
-                  print('Sound icon tapped');
-                }
-              },
-              child: Icon(
-                Icons.volume_up,
-                size: 36.0,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ],
-        title: Text(
-          'Level ${_currentIndex + 1}',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: Colors.blue,
+        title: Text('Captcha-like Grid of Clickable Images'),
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.blueAccent, Colors.lightBlueAccent],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Consumer<IsiGambarProvider>(
-                builder: (context, isiGambarProvider, child) {
-                  if (_currentIsiGambarList.isEmpty ||
-                      _currentIndex >= _currentIsiGambarList.length) {
-                    return Text(
-                      'No images found for the current level',
-                      style: TextStyle(color: Colors.white, fontSize: 20),
-                    );
-                  }
-
-                  final isiGambar = _currentIsiGambarList[_currentIndex];
-
-                  return Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(
-                          isiGambar.label ??
-                              '', // Display isiGambar.label if not null
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
+      body: Center(
+        child: _images.isEmpty
+            ? CircularProgressIndicator()
+            : Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.black),
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+                padding: EdgeInsets.all(8.0),
+                child: GridView.count(
+                  shrinkWrap: true,
+                  crossAxisCount: 3,
+                  crossAxisSpacing: 4.0,
+                  mainAxisSpacing: 4.0,
+                  children: List.generate(6, (index) {
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _clicked[index] = !_clicked[index];
+                        });
+                      },
+                      child: Stack(
+                        children: [
+                          AnimatedOpacity(
+                            opacity: _clicked[index] ? 0.3 : 1.0,
+                            duration: Duration(milliseconds: 500),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.black),
+                                image: DecorationImage(
+                                  image: _getImageProvider(_images[index]),
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
+                          if (_clicked[index])
+                            Center(
+                              child: Icon(
+                                _correctImages.contains(_images[index])
+                                    ? Icons.check_circle
+                                    : Icons.cancel,
+                                color: _correctImages.contains(_images[index])
+                                    ? Colors.green
+                                    : Colors.red,
+                                size: 50.0,
+                              ),
+                            ),
+                        ],
                       ),
-                      _buildImages(isiGambar),
-                      SizedBox(height: 20),
-                      _buildNavigationButtons(),
-                    ],
-                  );
-                },
+                    );
+                  }),
+                ),
               ),
-            ),
-          ],
-        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _goToNextLevel,
+        child: Icon(Icons.navigate_next),
       ),
     );
   }
 
-  Widget _buildImages(IsiGambar isiGambar) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Image.file(
-            File(isiGambar.gambar1),
-            width: 180,
-            height: 180,
-            fit: BoxFit.contain,
-          ),
-        ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Image.file(
-                File(isiGambar.gambar2),
-                width: 180,
-                height: 180,
-                fit: BoxFit.contain,
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Image.file(
-                File(isiGambar.gambar3),
-                width: 180,
-                height: 180,
-                fit: BoxFit.contain,
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildNavigationButtons() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(
-                width: 3,
-                color: _currentIndex > 0 ? Colors.white : Colors.grey),
-          ),
-          child: IconButton(
-            icon: Icon(Icons.arrow_back),
-            iconSize: 48,
-            color: _currentIndex > 0 ? Colors.white : Colors.grey,
-            onPressed: (_currentIndex > 0)
-                ? () => _navigateToLevel(_currentIndex - 1)
-                : null,
-            tooltip: 'Previous Level',
-          ),
-        ),
-        Container(
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(
-                width: 3,
-                color: _currentIndex < _currentIsiGambarList.length - 1
-                    ? Colors.white
-                    : Colors.grey),
-          ),
-          child: IconButton(
-            icon: Icon(Icons.arrow_forward),
-            iconSize: 48,
-            color: _currentIndex < _currentIsiGambarList.length - 1
-                ? Colors.white
-                : Colors.grey,
-            onPressed: (_currentIndex < _currentIsiGambarList.length - 1)
-                ? () => _navigateToLevel(_currentIndex + 1)
-                : null,
-            tooltip: 'Next Level',
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class TimerDisplay extends StatelessWidget {
-  final Stopwatch stopwatch;
-
-  TimerDisplay({required this.stopwatch});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Text(
-        _formatDuration(stopwatch.elapsed),
-        style: TextStyle(fontSize: 18, color: Colors.white),
-      ),
-    );
-  }
-
-  String _formatDuration(Duration duration) {
-    String twoDigits(int n) => n.toString().padLeft(2, '0');
-    String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
-    String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60));
-    return "$twoDigitMinutes:$twoDigitSeconds";
+  ImageProvider _getImageProvider(String imageUrl) {
+    if (imageUrl.isEmpty) {
+      return AssetImage('assets/images/maskot.png');
+    } else if (imageUrl.startsWith('http')) {
+      return NetworkImage(imageUrl);
+    } else if (imageUrl.startsWith('/data/user/0/com.example.app/cache/')) {
+      return FileImage(File(imageUrl));
+    } else {
+      // Default to AssetImage if none of the above conditions are met
+      return AssetImage('assets/images/maskot.png');
+    }
   }
 }

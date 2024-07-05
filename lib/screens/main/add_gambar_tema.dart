@@ -93,6 +93,8 @@ class _AddIsiGambarPageState extends State<AddIsiGambarPagetema> {
             toolbarWidgetColor: Colors.white,
             initAspectRatio: CropAspectRatioPreset.original,
             lockAspectRatio: false,
+            
+
           ),
           IOSUiSettings(
             minimumAspectRatio: 1.0,
@@ -276,7 +278,6 @@ class _AddIsiGambarPageState extends State<AddIsiGambarPagetema> {
                   });
                 },
               ),
-              
               SizedBox(height: 16.0),
               ElevatedButton(
                 onPressed: _addIsiGambar,

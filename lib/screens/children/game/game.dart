@@ -17,7 +17,7 @@ class GamePage extends StatelessWidget {
 
     isiGambarProvider.fetchIsiGambarList();
     final List<IsiGambar> currentIsiGambarList =
-        isiGambarProvider.getGambarBySkema(1);
+        isiGambarProvider.getGambarByTema(1);
     print(currentIsiGambarList);
     return Scaffold(
       appBar: AppBar(

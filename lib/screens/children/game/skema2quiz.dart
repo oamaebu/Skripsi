@@ -4,6 +4,7 @@ import 'package:app/provider/anak_provider.dart';
 import 'package:app/provider/gambar_provider.dart';
 import 'package:app/screens/children/game/garis/garis.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 import 'dart:async';
@@ -53,7 +54,7 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema2quiz> {
     isiGambarProvider.fetchIsiGambarList().then((_) {
       setState(() {
         _currentIsiGambarList =
-            isiGambarProvider.getGambarBySkema(widget.idTema);
+            isiGambarProvider.getGambarByTema(widget.idTema);
         if (_currentIsiGambarList.isNotEmpty) {
           _currentIndex = 0;
           _loadCurrentLevel();
@@ -62,17 +63,18 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema2quiz> {
     });
   }
 
-  void _saveGameState(String time, int idAnak) {
+  void _saveGameState(String time, int idAnak, int id_gambar) {
     final now = DateTime.now();
     final date = '${now.year}-${now.month}-${now.day}';
 
     final gameState = {
       'id': null,
-      'id_game': 1, // Assuming this is for the jigsaw puzzle game
+      'id_gambar': id_gambar, // Assuming this is for the jigsaw puzzle game
       'waktu': time,
       'id_anak': idAnak, // Set the child ID appropriately
       'tanggal': date,
       'jumlah_salah': _wrongChoices,
+      'skema': 2
     };
     _gameStateProvider.addGameState(gameState);
     print('jumlah_salah: ${gameState['jumlah_salah']}');
@@ -89,7 +91,8 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema2quiz> {
   void _completeLevel(int idAnak) {
     _stopwatch.stop();
     _player.play(AssetSource('sound/correct.mp3'));
-    _saveGameState(_formatTime(_stopwatch.elapsed), idAnak);
+    final idGambar = _currentIsiGambarList[_currentIndex].id;
+    _saveGameState(_formatTime(_stopwatch.elapsed), idAnak, idGambar!);
     AwesomeDialog(
       context: context,
       dialogType: DialogType.success,
@@ -232,7 +235,7 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema2quiz> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Level ${_currentIndex + 1}',
+          _currentIsiGambarList[_currentIndex].tingkatKesulitan,
           style: TextStyle(color: Colors.white),
         ),
         backgroundColor: Colors.blue,
@@ -258,94 +261,137 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema2quiz> {
                     child: Container(
                       alignment: AlignmentDirectional.topEnd,
                       child: IconButton(
-                          icon: Icon(Icons.volume_up,
-                              size: 50.0, color: Colors.blue),
-                          onPressed: _initPlayer),
+                        icon: Icon(Icons.volume_up,
+                            size: MediaQuery.of(context).size.width * 0.12,
+                            color: Colors.blue),
+                        onPressed: _initPlayer,
+                      ),
                     ),
                   ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildNavigationButtonsleft(),
-                      Container(
-                        child: Expanded(
-                          child: AspectRatio(
-                            aspectRatio: fullImage!.width / fullImage!.height,
-                            child: Container(
-                              child: LayoutBuilder(
-                                builder: (context, constraints) {
-                                  final scaleX =
-                                      constraints.maxWidth / fullImage!.width;
-                                  final scaleY =
-                                      constraints.maxHeight / fullImage!.height;
-                                  final scale = min(scaleX, scaleY);
+                  Expanded(
+                    flex: 12,
+                    child: AspectRatio(
+                      aspectRatio: fullImage!.width / fullImage!.height,
+                      child: Container(
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final scaleX =
+                                constraints.maxWidth / fullImage!.width;
+                            final scaleY =
+                                constraints.maxHeight / fullImage!.height;
+                            final scale = min(scaleX, scaleY);
 
-                                  return Stack(
-                                    children: [
-                                      CustomPaint(
-                                        size: Size(
-                                          fullImage!.width * scale,
-                                          fullImage!.height * scale,
-                                        ),
-                                        painter: TransparentBackgroundPainter(
-                                          fullImage!,
-                                          Rect.fromLTRB(
-                                            0,
-                                            0,
-                                            fullImage!.width.toDouble(),
-                                            fullImage!.height.toDouble(),
-                                          ),
-                                          0.3,
-                                        ),
-                                      ),
-                                      _buildGridLines(scale, fullImage!.width,
-                                          fullImage!.height),
-                                      for (var piece in displayedPieces)
-                                        DraggablePiece(
-                                          piece: piece,
-                                          onPieceMoved: _onPieceMoved,
-                                          scale: scale,
-                                        ),
-                                    ],
-                                  );
-                                },
-                              ),
-                            ),
-                          ),
+                            return Stack(
+                              children: [
+                                CustomPaint(
+                                  size: Size(
+                                    fullImage!.width * scale,
+                                    fullImage!.height * scale,
+                                  ),
+                                  painter: TransparentBackgroundPainter(
+                                    fullImage!,
+                                    Rect.fromLTRB(
+                                      0,
+                                      0,
+                                      fullImage!.width.toDouble(),
+                                      fullImage!.height.toDouble(),
+                                    ),
+                                    0.3,
+                                  ),
+                                ),
+                                _buildGridLines(
+                                  scale,
+                                  fullImage!.width,
+                                  fullImage!.height,
+                                ),
+                                for (var piece in displayedPieces)
+                                  DraggablePiece(
+                                    piece: piece,
+                                    onPieceMoved: _onPieceMoved,
+                                    scale: scale,
+                                  ),
+                              ],
+                            );
+                          },
                         ),
                       ),
-                      _buildNavigationButtonsright()
-                    ],
+                    ),
                   ),
-                  Container(
-                    height: 100,
-                    color: Colors.lightBlueAccent,
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
+                  Padding(
+                    padding: const EdgeInsets.all(1.0),
+                    child: Expanded(
+                      flex: 2,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              ElevatedButton(
-                                onPressed: _resetPuzzle,
-                                child: Text('Ulang'),
-                              ),
-                              Container(
-                                height: 80,
-                                child: _buildNextPiecePreview(),
-                              ),
-                              ElevatedButton(
-                                onPressed: () =>
-                                    _checkCompletion1(currentAnak?.id ?? 0),
-                                child: Text('Selesai'),
-                              ),
-                            ],
-                          ),
+                          Expanded(child: _buildNavigationButtonsleft(context)),
+                          Expanded(
+                              child: _buildNavigationButtonsright(context)),
                         ],
                       ),
                     ),
                   ),
+                  Expanded(
+                    flex: 3,
+                    child: Container(
+                      color: Colors.lightBlueAccent,
+                      child: Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Container(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              Flexible(
+                                flex: 2,
+                                child: Container(
+                                  width: MediaQuery.of(context).size.width *
+                                      0.2, // 20% of the screen width
+                                  child: IconButton(
+                                    icon: Icon(
+                                      Icons.refresh,
+                                      color: Colors.white,
+                                      size: MediaQuery.of(context).size.width *
+                                          0.08, // Adjust icon size based on screen width
+                                    ),
+                                    onPressed: _resetPuzzle,
+                                    tooltip: 'Ulang',
+                                  ),
+                                ),
+                              ),
+                              Flexible(
+                                flex: 3,
+                                child: Container(
+                                  height: MediaQuery.of(context).size.height *
+                                      0.2, // 20% of the screen height
+                                  width: MediaQuery.of(context).size.width *
+                                      0.2, // 20% of the screen width
+                                  child: _buildNextPiecePreview(),
+                                ),
+                              ),
+                              Flexible(
+                                flex: 2,
+                                child: Container(
+                                  width: MediaQuery.of(context).size.width *
+                                      0.2, // 20% of the screen width
+                                  child: IconButton(
+                                    icon: Icon(
+                                      Icons.check,
+                                      color: Colors.white,
+                                      size: MediaQuery.of(context).size.width *
+                                          0.08, // Adjust icon size based on screen width
+                                    ),
+                                    onPressed: () =>
+                                        _checkCompletion1(currentAnak?.id ?? 0),
+                                    tooltip: 'Selesai',
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  )
                 ],
               ),
             ),
@@ -363,24 +409,27 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema2quiz> {
     }
   }
 
-  Widget _buildNavigationButtonsleft() {
+  Widget _buildNavigationButtonsleft(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         Container(
+          width: MediaQuery.of(context).size.width *
+              0.18, // 10% of the screen width
+          height: MediaQuery.of(context).size.width *
+              0.18, // 10% of the screen width
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             border: Border.all(
-                width: 3,
-                color:
-                    _currentIndex > 0 ? Colors.lightBlueAccent : Colors.grey),
+              width: 3,
+              color: _currentIndex > 0 ? Colors.lightBlueAccent : Colors.grey,
+            ),
           ),
           child: IconButton(
-            icon: Icon(Icons.arrow_back),
-            iconSize: 48,
-            color: _currentIndex > 0
-                ? Color.fromARGB(255, 0, 0, 0)
-                : Color.fromARGB(255, 108, 204, 11),
+            icon: Icon(Icons.arrow_back,
+                size: MediaQuery.of(context).size.width *
+                    0.1), // Adjust icon size
+            color: _currentIndex > 0 ? Colors.black : Colors.grey,
             onPressed: (_currentIndex > 0)
                 ? () => _navigateToLevel(_currentIndex - 1)
                 : null,
@@ -391,25 +440,31 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema2quiz> {
     );
   }
 
-  Widget _buildNavigationButtonsright() {
+  Widget _buildNavigationButtonsright(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         Container(
+          width: MediaQuery.of(context).size.width *
+              0.18, // 10% of the screen width
+          height: MediaQuery.of(context).size.width *
+              0.18, // 10% of the screen width
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             border: Border.all(
-                width: 3,
-                color: _currentIndex < _currentIsiGambarList.length - 1
-                    ? Colors.lightBlueAccent
-                    : Colors.black38),
+              width: 3,
+              color: _currentIndex < _currentIsiGambarList.length - 1
+                  ? Colors.lightBlueAccent
+                  : Colors.grey,
+            ),
           ),
           child: IconButton(
-            icon: Icon(Icons.arrow_forward),
-            iconSize: 48,
+            icon: Icon(Icons.arrow_forward,
+                size: MediaQuery.of(context).size.width *
+                    0.1), // Adjust icon size
             color: _currentIndex < _currentIsiGambarList.length - 1
-                ? const Color.fromARGB(255, 0, 0, 0)
-                : const Color.fromARGB(255, 129, 128, 128),
+                ? Colors.black
+                : Colors.grey,
             onPressed: (_currentIndex < _currentIsiGambarList.length - 1)
                 ? () => _navigateToLevel(_currentIndex + 1)
                 : null,

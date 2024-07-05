@@ -172,13 +172,16 @@ class ListTemaState extends State<ListTema> {
               ),
             ),
           ),
-          SizedBox(height: defaultPadding),
-          ElevatedButton(
-            onPressed: () {
-              _showAddTemaDialog(context);
-            },
-            child: Text('Add Tema'),
+          Container(
+            alignment: Alignment.bottomRight,
+            child: ElevatedButton(
+              onPressed: () {
+                _showAddTemaDialog(context);
+              },
+              child: Text('Add Tema'),
+            ),
           ),
+          SizedBox(height: defaultPadding),
         ],
       ),
     );

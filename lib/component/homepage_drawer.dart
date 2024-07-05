@@ -1,9 +1,11 @@
+import 'package:flutter/material.dart';
 import 'package:app/screens/children/homepage.dart';
 import 'package:app/screens/main/main_screen.dart';
-import 'package:flutter/material.dart';
 
 class HomepageDrawer extends StatelessWidget {
-  const HomepageDrawer({super.key});
+  final bool quiz;
+
+  const HomepageDrawer({Key? key, required this.quiz}) : super(key: key);
 
   void _showPasswordDialog(BuildContext context) {
     final TextEditingController passwordController = TextEditingController();
@@ -16,6 +18,7 @@ class HomepageDrawer extends StatelessWidget {
           content: TextField(
             controller: passwordController,
             obscureText: true,
+            keyboardType: TextInputType.number,
             decoration: InputDecoration(
               hintText: 'Password',
               border: OutlineInputBorder(),
@@ -31,7 +34,7 @@ class HomepageDrawer extends StatelessWidget {
             ElevatedButton(
               child: Text('OK'),
               onPressed: () {
-                if (passwordController.text == 'admin123') {
+                if (passwordController.text == '12345') {
                   Navigator.of(context).pop();
                   Navigator.popAndPushNamed(context, '/MainScreen');
                 } else {
@@ -96,19 +99,29 @@ class HomepageDrawer extends StatelessWidget {
             ListTile(
               leading: Icon(Icons.quiz, color: Colors.white),
               title: Text(
-                'Quiz',
+                quiz ? 'Homepage' : 'Quiz',
                 style: TextStyle(color: Colors.white),
               ),
               onTap: () {
-             Navigator.of(context).pop();
-                 Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => HomePage(
-                      quiz: true,
+                Navigator.of(context).pop();
+                if (quiz) {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => HomePage(quiz: false),
                     ),
-                  ),
-                );
+                  );
+                } else {
+                  // Handle the Quiz navigation
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => HomePage(
+                        quiz: true,
+                      ), // Replace with your Quiz screen
+                    ),
+                  );
+                }
               },
             ),
           ],

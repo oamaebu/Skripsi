@@ -13,7 +13,7 @@ class IsiGambarProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  List<IsiGambar> getGambarBySkema(int idTema) {
+  List<IsiGambar> getGambarByTema(int idTema) {
     // Define the custom order
     final List<String> difficultyOrder = ['mudah', 'sedang', 'sulit'];
 
@@ -36,6 +36,13 @@ class IsiGambarProvider with ChangeNotifier {
   Future<void> fetchIsiGambarByTingkatKesulitan(String tingkatKesulitan) async {
     _isiGambarList =
         await _dbHelper.getIsiGambarByTingkatKesulitan(tingkatKesulitan);
+    notifyListeners();
+  }
+
+  void updateAllStatuses(List<IsiGambar> filteredList, bool status) {
+    for (var isiGambar in filteredList) {
+      isiGambar.status = status;
+    }
     notifyListeners();
   }
 

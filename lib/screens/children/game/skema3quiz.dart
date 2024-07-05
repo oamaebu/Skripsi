@@ -54,7 +54,7 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3quiz> {
     isiGambarProvider.fetchIsiGambarList().then((_) {
       setState(() {
         _currentIsiGambarList =
-            isiGambarProvider.getGambarBySkema(widget.idTema);
+            isiGambarProvider.getGambarByTema(widget.idTema);
         if (_currentIsiGambarList.isNotEmpty) {
           _currentIndex = 0;
           _loadCurrentLevel();
@@ -63,17 +63,18 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3quiz> {
     });
   }
 
-  void _saveGameState(String time, int idAnak) {
+  void _saveGameState(String time, int idAnak, int id_gambar) {
     final now = DateTime.now();
     final date = '${now.year}-${now.month}-${now.day}';
 
     final gameState = {
       'id': null,
-      'id_game': 1, // Assuming this is for the jigsaw puzzle game
+      'id_gambar': id_gambar, // Assuming this is for the jigsaw puzzle game
       'waktu': time,
       'id_anak': idAnak, // Set the child ID appropriately
       'tanggal': date,
       'jumlah_salah': _wrongChoices,
+      'skema': 3
     };
     _gameStateProvider.addGameState(gameState);
     print('jumlah_salah: ${gameState['jumlah_salah']}');
@@ -90,7 +91,8 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3quiz> {
   void _completeLevel(int idAnak) {
     _stopwatch.stop();
     _player.play(AssetSource('sound/correct.mp3'));
-    _saveGameState(_formatTime(_stopwatch.elapsed), idAnak);
+    final idGambar = _currentIsiGambarList[_currentIndex].id;
+    _saveGameState(_formatTime(_stopwatch.elapsed), idAnak, idGambar!);
     AwesomeDialog(
       context: context,
       dialogType: DialogType.success,
@@ -233,7 +235,7 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3quiz> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Level ${_currentIndex + 1}',
+          _currentIsiGambarList[_currentIndex].tingkatKesulitan,
           style: TextStyle(color: Colors.white),
         ),
         backgroundColor: Colors.blue,
@@ -260,7 +262,8 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3quiz> {
                       alignment: AlignmentDirectional.topEnd,
                       child: IconButton(
                         icon: Icon(Icons.volume_up,
-                            size: 50.0, color: Colors.blue),
+                            size: MediaQuery.of(context).size.width * 0.12,
+                            color: Colors.blue),
                         onPressed: _initPlayer,
                       ),
                     ),
@@ -314,14 +317,18 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3quiz> {
                       ),
                     ),
                   ),
-                  Expanded(
-                    flex: 2,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        Expanded(child: _buildNavigationButtonsleft(context)),
-                        Expanded(child: _buildNavigationButtonsright(context)),
-                      ],
+                  Padding(
+                    padding: const EdgeInsets.all(1.0),
+                    child: Expanded(
+                      flex: 2,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          Expanded(child: _buildNavigationButtonsleft(context)),
+                          Expanded(
+                              child: _buildNavigationButtonsright(context)),
+                        ],
+                      ),
                     ),
                   ),
                   Expanded(
@@ -408,9 +415,9 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3quiz> {
       children: [
         Container(
           width: MediaQuery.of(context).size.width *
-              0.2, // 10% of the screen width
+              0.18, // 10% of the screen width
           height: MediaQuery.of(context).size.width *
-              0.2, // 10% of the screen width
+              0.18, // 10% of the screen width
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             border: Border.all(
@@ -439,9 +446,9 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3quiz> {
       children: [
         Container(
           width: MediaQuery.of(context).size.width *
-              0.2, // 10% of the screen width
+              0.18, // 10% of the screen width
           height: MediaQuery.of(context).size.width *
-              0.2, // 10% of the screen width
+              0.18, // 10% of the screen width
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             border: Border.all(

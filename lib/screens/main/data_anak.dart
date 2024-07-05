@@ -5,6 +5,7 @@ import 'package:app/responsive.dart';
 import 'package:app/screens/dashboard/components/Statistik%20copy.dart';
 import 'package:app/screens/dashboard/components/Statistik_salah.dart';
 import 'package:app/screens/dashboard/components/Statistik_waktu.dart';
+import 'package:app/screens/dashboard/components/profil_anak.dart';
 import 'package:app/screens/main/components/side_menu.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -55,65 +56,9 @@ class DetailPage extends HookWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
-                      Text("Data anak Chamile"),
+                  
                       SizedBox(height: 10),
-                      Container(
-                        width: double.infinity,
-                        height: 200,
-                        color: secondaryColor,
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: EdgeInsets.all(20),
-                              child: CircleAvatar(
-                                radius: 75,
-                                backgroundColor: Colors.grey.shade200,
-                                child: Icon(
-                                  Icons.person,
-                                  size: 75,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              child: Container(
-                                padding: EdgeInsets.all(20),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceEvenly,
-                                  children: [
-                                    Flexible(
-                                      child: Text(
-                                        "Nama: ${currentAnak?.nama ?? ''}",
-                                        softWrap: true,
-                                        overflow: TextOverflow.visible,
-                                        maxLines: 3,
-                                      ),
-                                    ),
-                                    Flexible(
-                                      child: Text(
-                                        "Umur: ${currentAnak?.umur.toString() ?? ''} tahun",
-                                        softWrap: true,
-                                        overflow: TextOverflow.ellipsis,
-                                        maxLines: 1,
-                                      ),
-                                    ),
-                                    Flexible(
-                                      child: Text(
-                                        "Kelas: ${currentAnak?.kelas ?? ''}",
-                                        softWrap: true,
-                                        overflow: TextOverflow.ellipsis,
-                                        maxLines: 1,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      profilAnak(),
                       SizedBox(height: 25),
                       DropdownButton<String>(
                         value: selectedStatistik.value,
@@ -146,7 +91,7 @@ class DetailPage extends HookWidget {
                         },
                       ),
                       SizedBox(height: 25),
-                      Test()
+                      Test(),
                     ],
                   ),
                 ),

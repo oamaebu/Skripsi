@@ -48,7 +48,7 @@ class TestState extends State<Test> {
                       DataCell(Text(gameState['id'].toString())),
                       DataCell(Text(gameState['jumlah_salah'].toString())),
                       DataCell(Text(gameState['waktu'])),
-                      DataCell(Text(gameState['id_anak'].toString())),
+                      DataCell(Text(gameState['id_gambar'].toString())),
                     ],
                   );
                 },

@@ -62,11 +62,13 @@ class DatabaseHelper {
   // GAME_STATE Table
   String gameStateTable = 'game_state';
   String gameStateColId = 'id';
-  String gameStateColIdGame = 'id_game';
+  String gameStateColIdGame = 'id_gambar';
   String gameStateColIdAnak = 'id_anak';
   String gameStateColWaktu = 'waktu';
   String gameStateColTanggal = 'tanggal';
   String gameStateColSalah = 'jumlah_salah';
+    String gameStateColSkema = 'skema';
+
 
   Future<Database> get db async {
     if (_db == null) {
@@ -115,14 +117,13 @@ class DatabaseHelper {
       'FOREIGN KEY ($gambarColLIDtema) REFERENCES $TemaTable ($TemaColId)'
       ')',
     );
-
     await db.execute(
       'CREATE TABLE $garisTable($garisColId INTEGER PRIMARY KEY, $garisColLevel INTEGER, $garisColKelas TEXT, $garisColContent TEXT, $garisColIdGame INTEGER, FOREIGN KEY ($garisColIdGame) REFERENCES $gameTable ($gameColId))',
     );
     await db.execute(
         'CREATE TABLE $TemaTable($TemaColId INTEGER PRIMARY KEY, $TemaColInamaTema TEXT, $TemaColStatus BOOLEAN)');
     await db.execute(
-      'CREATE TABLE $gameStateTable($gameStateColId INTEGER PRIMARY KEY, $gameStateColTanggal TEXT, $gameStateColIdGame INTEGER , $gameStateColSalah INTEGER, $gameStateColWaktu TIME, $gameStateColIdAnak INTEGER, FOREIGN KEY ($gameStateColIdGame) REFERENCES $gameTable ($gameColId), FOREIGN KEY ($gameStateColIdAnak) REFERENCES $anakTable ($anakColId))',
+      'CREATE TABLE $gameStateTable($gameStateColId INTEGER PRIMARY KEY, $gameStateColTanggal TEXT, $gameStateColIdGame INTEGER , $gameStateColSkema INTEGER, $gameStateColSalah INTEGER, $gameStateColWaktu TIME, $gameStateColIdAnak INTEGER, FOREIGN KEY ($gameStateColIdGame) REFERENCES $gambarTable ($gambarColId), FOREIGN KEY ($gameStateColIdAnak) REFERENCES $anakTable ($anakColId))',
     );
   }
 

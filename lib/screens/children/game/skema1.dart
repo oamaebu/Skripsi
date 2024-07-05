@@ -30,7 +30,7 @@ class _Skema1State extends State<Skema1> {
     final isiGambarProvider =
         Provider.of<IsiGambarProvider>(context, listen: false);
     isiGambarProvider.fetchIsiGambarList().then((_) {
-      _currentIsiGambarList = isiGambarProvider.getGambarBySkema(widget.idTema);
+      _currentIsiGambarList = isiGambarProvider.getGambarByTema(widget.idTema);
       if (_currentIsiGambarList.isNotEmpty) {
         _currentIndex = 0; // Start from the first item
         _initPlayer();
@@ -134,7 +134,7 @@ class _Skema1State extends State<Skema1> {
                               '', // Display isiGambar.label if not null
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 28,
+                            fontSize: MediaQuery.of(context).size.width * 0.1,
                             fontWeight: FontWeight.bold,
                           ),
                         ),

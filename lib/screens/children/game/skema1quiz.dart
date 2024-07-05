@@ -26,6 +26,7 @@ class LevelPagetest extends StatefulWidget {
 class _LevelPagetestState extends State<LevelPagetest> {
   List<IsiGambar> _currentIsiGambarList = [];
   int _currentIndex = 0;
+  int benar = 0;
   late GameStateProvider _gameStateProvider;
   final player = AudioPlayer();
 
@@ -48,7 +49,7 @@ class _LevelPagetestState extends State<LevelPagetest> {
     final isiGambarProvider =
         Provider.of<IsiGambarProvider>(context, listen: false);
     isiGambarProvider.fetchIsiGambarList().then((_) {
-      _currentIsiGambarList = isiGambarProvider.getGambarBySkema(widget.idTema);
+      _currentIsiGambarList = isiGambarProvider.getGambarByTema(widget.idTema);
       if (_currentIsiGambarList.isNotEmpty) {
         _currentIndex = 0;
         _shuffledImagePaths = _shuffleImagePaths(_currentIndex);
@@ -75,23 +76,25 @@ class _LevelPagetestState extends State<LevelPagetest> {
     super.dispose();
   }
 
-  void _saveGameState(String time, int anakId) {
+  void _saveGameState(String time, int anakId, int id_gambar) {
     final now = DateTime.now();
     final date = '${now.year}-${now.month}-${now.day}';
 
     final gameState = {
       'id': null,
-      'id_game': 1,
+      'id_gambar': id_gambar, // Assuming this is for the jigsaw puzzle game
       'waktu': time,
-      'id_anak': anakId,
+      'id_anak': anakId, // Set the child ID appropriately
       'tanggal': date,
       'jumlah_salah': _wrongChoices,
+      'skema': 1
     };
     _gameStateProvider.addGameState(gameState);
     print('jumlah_salah: ${gameState['jumlah_salah']}');
   }
 
   void _navigateToLevel(int index) {
+    benar = 0;
     if (index >= 0 && index < _currentIsiGambarList.length) {
       setState(() {
         _currentIndex = index;
@@ -104,17 +107,32 @@ class _LevelPagetestState extends State<LevelPagetest> {
   }
 
   void _completeLevel(int? anakId) {
-    _stopwatch.stop();
-    player.play(AssetSource('sound/correct.mp3'));
-    _saveGameState(_formatTime(_stopwatch.elapsed), anakId!);
-    AwesomeDialog(
-      context: context,
-      dialogType: DialogType.success,
-      animType: AnimType.rightSlide,
-      title: 'Congratulations!',
-      desc: 'You have completed the level.',
-      btnOkOnPress: () {},
-    )..show();
+    benar++;
+    if (benar == 2) {
+      _stopwatch.stop();
+      player.play(AssetSource('sound/correct.mp3'));
+      final idGambar = _currentIsiGambarList[_currentIndex].id;
+      _saveGameState(_formatTime(_stopwatch.elapsed), anakId!, idGambar!);
+      AwesomeDialog(
+        context: context,
+        dialogType: DialogType.success,
+         
+        animType: AnimType.rightSlide,
+        title: 'Congratulations!',
+        desc: 'You have completed the level.',
+        dialogBackgroundColor:
+            Colors.white, // Set the background color to white
+        btnOkText: 'mtgfs',
+        btnOkOnPress: () {
+          _navigateToLevel(_currentIndex + 1);
+        },
+        btnOkColor: Colors.blueAccent,
+        titleTextStyle:
+            TextStyle(color: Colors.black), // Change the title text color
+        descTextStyle:
+            TextStyle(color: Colors.black), // Change the description text color
+      )..show();
+    }
   }
 
   void _shakeWrongImage(GlobalKey<ShakeTransitionState> key) {
@@ -301,7 +319,7 @@ class _LevelPagetestState extends State<LevelPagetest> {
                     ),
                   ),
                   Container(
-                    height: 200,
+                    height: MediaQuery.of(context).size.height * 0.3,
                     child: ShakeTransition(
                       key: _wrongImageKey1,
                       child: DragTarget<PuzzlePiece>(

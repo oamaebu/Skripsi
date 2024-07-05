@@ -9,10 +9,10 @@ import 'storage_info_card.dart';
 import 'package:app/provider/anak_provider.dart';
 import 'package:app/screens/children/homepage.dart';
 
-class StorageDetails extends StatefulWidget {
+class profilAnak extends StatefulWidget {
   final File? _photo;
 
-  const StorageDetails({Key? key, File? photo})
+  const profilAnak({Key? key, File? photo})
       : _photo = photo,
         super(key: key);
 
@@ -20,23 +20,16 @@ class StorageDetails extends StatefulWidget {
   _StorageDetailsState createState() => _StorageDetailsState();
 }
 
-class _StorageDetailsState extends State<StorageDetails> {
+class _StorageDetailsState extends State<profilAnak> {
   @override
   void initState() {
     super.initState();
-    checkAnakWithIdZero();
   }
 
   Future<void> _logout(BuildContext context) async {
     final _authService = AuthService();
     await _authService.logout();
     Navigator.pushReplacementNamed(context, '/Login');
-  }
-
-  void checkAnakWithIdZero() async {
-    final anakProvider = Provider.of<AnakProvider>(context, listen: false);
-    await anakProvider.getAnak();
-    anakProvider.setCurrentAnak(anakProvider.getAnakByIdZero());
   }
 
   @override
@@ -59,19 +52,6 @@ class _StorageDetailsState extends State<StorageDetails> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => HomePage(
-                    quiz: false,
-                  ),
-                ),
-              );
-            },
-            child: Text('Main Sekarang'),
-          ),
           Text(
             "Detail Anak",
             style: TextStyle(
@@ -114,19 +94,6 @@ class _StorageDetailsState extends State<StorageDetails> {
               numOfFiles: '${currentAnak.kelamin.toString()}',
             ),
             SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => HomePage(
-                      quiz: false,
-                    ),
-                  ),
-                );
-              },
-              child: Text('Main Sekarang'),
-            ),
           ] else ...[
             Text(
               'No data available for the selected child.',

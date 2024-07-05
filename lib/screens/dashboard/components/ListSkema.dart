@@ -43,7 +43,6 @@ class ListSkemaState extends State<ListSkema> {
               columnSpacing: defaultPadding,
               columns: [
                 DataColumn(label: Text("Skema")),
-                DataColumn(label: Text("Edit")),
                 DataColumn(label: Text("Status")),
               ],
               rows: List.generate(skemaNames.length, (index) {
@@ -52,14 +51,6 @@ class ListSkemaState extends State<ListSkema> {
                     index]; // Assuming skemaList is properly initialized
                 return DataRow(cells: [
                   DataCell(Text(skemaName)),
-                  DataCell(
-                    ElevatedButton(
-                      onPressed: () {
-                  
-                      },
-                      child: Text('Edit'),
-                    ),
-                  ),
                   DataCell(
                     Switch(
                       value: skema.statusSkema ?? true,
