@@ -13,7 +13,7 @@ class LoginPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final userModel = Provider.of<UserModel>(context, listen: false);
     final anaksProvider = Provider.of<AnakProvider>(context, listen: false);
-    
+
     // Check if user is already logged in
     userModel.authService.isLoggedIn().then((isLoggedIn) {
       if (isLoggedIn) {
@@ -68,35 +68,9 @@ class LoginPage extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: 10),
-                TextButton(
-                  onPressed: () {},
-                  child: Text(
-                    'Forgot Password?',
-                    style: TextStyle(color: Colors.black),
-                  ),
-                ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    Text(
-                      "Don't have an account yet? ",
-                      style: TextStyle(
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pushNamed(context, '/profilanak');
-                      },
-                      child: Text(
-                        'Sign up',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blue,
-                        ),
-                      ),
-                    ),
-                  ],
+                  children: <Widget>[],
                 ),
               ],
             ),

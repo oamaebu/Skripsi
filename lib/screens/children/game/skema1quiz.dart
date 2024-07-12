@@ -24,9 +24,11 @@ class LevelPagetest extends StatefulWidget {
 }
 
 class _LevelPagetestState extends State<LevelPagetest> {
+  int poin = 0;
   List<IsiGambar> _currentIsiGambarList = [];
   int _currentIndex = 0;
   int benar = 0;
+
   late GameStateProvider _gameStateProvider;
   final player = AudioPlayer();
 
@@ -39,6 +41,8 @@ class _LevelPagetestState extends State<LevelPagetest> {
   int _wrongChoices = 0;
 
   List<String> _shuffledImagePaths = [];
+
+  bool _isTimeUp = false;
 
   @override
   void initState() {
@@ -76,17 +80,16 @@ class _LevelPagetestState extends State<LevelPagetest> {
     super.dispose();
   }
 
-  void _saveGameState(String time, int anakId, int id_gambar) {
+  void _saveGameState(String time, int anakId, int poin) {
     final now = DateTime.now();
     final date = '${now.year}-${now.month}-${now.day}';
 
     final gameState = {
       'id': null,
-      'id_gambar': id_gambar, // Assuming this is for the jigsaw puzzle game
       'waktu': time,
-      'id_anak': anakId, // Set the child ID appropriately
+      'id_anak': anakId,
       'tanggal': date,
-      'jumlah_salah': _wrongChoices,
+      'poin': poin,
       'skema': 1
     };
     _gameStateProvider.addGameState(gameState);
@@ -99,40 +102,65 @@ class _LevelPagetestState extends State<LevelPagetest> {
       setState(() {
         _currentIndex = index;
         _shuffledImagePaths = _shuffleImagePaths(_currentIndex);
-        _stopwatch.reset();
-        _stopwatch.start();
       });
       _initPlayer();
+    } else if (index >= _currentIsiGambarList.length) {
+      _showCompletionDialog();
     }
   }
 
   void _completeLevel(int? anakId) {
     benar++;
+    print('angka poin = $poin');
     if (benar == 2) {
-      _stopwatch.stop();
+      switch (_currentIsiGambarList[_currentIndex].tingkatKesulitan) {
+        case 'mudah':
+          poin = poin + 1;
+        case 'sedang':
+          poin = poin + 2;
+        case 'sulit':
+          poin = poin + 3;
+      }
       player.play(AssetSource('sound/correct.mp3'));
-      final idGambar = _currentIsiGambarList[_currentIndex].id;
-      _saveGameState(_formatTime(_stopwatch.elapsed), anakId!, idGambar!);
-      AwesomeDialog(
-        context: context,
-        dialogType: DialogType.success,
-         
-        animType: AnimType.rightSlide,
-        title: 'Congratulations!',
-        desc: 'You have completed the level.',
-        dialogBackgroundColor:
-            Colors.white, // Set the background color to white
-        btnOkText: 'mtgfs',
-        btnOkOnPress: () {
-          _navigateToLevel(_currentIndex + 1);
-        },
-        btnOkColor: Colors.blueAccent,
-        titleTextStyle:
-            TextStyle(color: Colors.black), // Change the title text color
-        descTextStyle:
-            TextStyle(color: Colors.black), // Change the description text color
-      )..show();
+      if (_currentIndex == _currentIsiGambarList.length - 1) {
+        _saveGameState(_formatTime(_stopwatch.elapsed), anakId!, poin);
+        _showCompletionDialog();
+      } else {
+        AwesomeDialog(
+          context: context,
+          dialogType: DialogType.success,
+          animType: AnimType.rightSlide,
+          title: 'Congratulations!',
+          desc: 'You have completed the level.',
+          btnOkText: 'Next Level',
+          btnOkOnPress: () {
+            _navigateToLevel(_currentIndex + 1);
+          },
+          btnOkColor: Colors.blueAccent,
+          titleTextStyle: TextStyle(color: Colors.black),
+          descTextStyle: TextStyle(color: Colors.black),
+        )..show();
+      }
     }
+  }
+
+  void _showCompletionDialog() {
+    _stopwatch.stop();
+    String finalTime = _formatTime(_stopwatch.elapsed);
+    AwesomeDialog(
+      context: context,
+      dialogType: DialogType.success,
+      animType: AnimType.rightSlide,
+      title: 'Congratulations!',
+      desc: 'You have completed all levels!\nYour time: $finalTime',
+      btnOkText: 'Finish',
+      btnOkOnPress: () {
+        Navigator.of(context).pop(); // Return to previous screen
+      },
+      btnOkColor: Colors.blueAccent,
+      titleTextStyle: TextStyle(color: Colors.black),
+      descTextStyle: TextStyle(color: Colors.black),
+    )..show();
   }
 
   void _shakeWrongImage(GlobalKey<ShakeTransitionState> key) {
@@ -146,10 +174,9 @@ class _LevelPagetestState extends State<LevelPagetest> {
 
   String _formatTime(Duration duration) {
     String twoDigits(int n) => n.toString().padLeft(2, '0');
-    final hours = twoDigits(duration.inHours);
     final minutes = twoDigits(duration.inMinutes.remainder(60));
     final seconds = twoDigits(duration.inSeconds.remainder(60));
-    return '$hours:$minutes:$seconds';
+    return '$minutes:$seconds';
   }
 
   List<String> _shuffleImagePaths(int index) {
@@ -257,18 +284,37 @@ class _LevelPagetestState extends State<LevelPagetest> {
     );
   }
 
+  void _onTimeUp() {
+    if (!_isTimeUp) {
+      _isTimeUp = true;
+      _stopwatch.stop();
+      AwesomeDialog(
+        context: context,
+        dialogType: DialogType.info,
+        animType: AnimType.rightSlide,
+        title: 'Time\'s Up!',
+        desc: 'You\'ve reached the 5-minute time limit.',
+        btnOkText: 'OK',
+        btnOkOnPress: () {
+          Navigator.of(context).pop();
+        },
+      )..show();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final anakProvider = Provider.of<AnakProvider>(context);
     final currentAnak = anakProvider.currentAnak;
+    final label = _currentIsiGambarList[_currentIndex].label;
 
     return Scaffold(
       appBar: AppBar(
         actions: [
-          TimerDisplay(stopwatch: _stopwatch),
+          TimerDisplay(stopwatch: _stopwatch, onTimeUp: _onTimeUp),
         ],
         title: Text(
-          'Level ${widget.level}',
+          'Level ${widget.level} (${_currentIsiGambarList[_currentIndex].tingkatKesulitan})',
           style: TextStyle(
             color: Colors.white,
             fontSize: 24,
@@ -307,18 +353,43 @@ class _LevelPagetestState extends State<LevelPagetest> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Text(
-                      'Pilih Gambar Yang Sama!',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 30,
-                        fontWeight: FontWeight.bold,
+                  Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          'Pilih Gambar Yang Sama!',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 30,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
-                    ),
+                      Text(
+                        '$label',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 30,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
                   Container(
+                    margin: EdgeInsets.symmetric(horizontal: 30),
+                    padding: const EdgeInsets.all(16.0),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 10,
+                          offset: Offset(0, 10),
+                        ),
+                      ],
+                    ),
                     height: MediaQuery.of(context).size.height * 0.3,
                     child: ShakeTransition(
                       key: _wrongImageKey1,
@@ -372,10 +443,6 @@ class _LevelPagetestState extends State<LevelPagetest> {
                       }).toList(),
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: _buildNavigationButtons(),
-                  ),
                 ],
               ),
             );
@@ -394,8 +461,9 @@ class PuzzlePiece {
 
 class TimerDisplay extends StatefulWidget {
   final Stopwatch stopwatch;
+  final VoidCallback onTimeUp;
 
-  TimerDisplay({required this.stopwatch});
+  TimerDisplay({required this.stopwatch, required this.onTimeUp});
 
   @override
   _TimerDisplayState createState() => _TimerDisplayState();
@@ -403,13 +471,19 @@ class TimerDisplay extends StatefulWidget {
 
 class _TimerDisplayState extends State<TimerDisplay> {
   late Timer _timer;
+  final int _timeLimit = 5 * 60; // 5 minutes in seconds
 
   @override
   void initState() {
     super.initState();
     _timer = Timer.periodic(Duration(seconds: 1), (timer) {
       if (widget.stopwatch.isRunning) {
-        setState(() {});
+        setState(() {
+          if (widget.stopwatch.elapsed.inSeconds >= _timeLimit) {
+            widget.stopwatch.stop();
+            widget.onTimeUp();
+          }
+        });
       }
     });
   }
@@ -422,15 +496,14 @@ class _TimerDisplayState extends State<TimerDisplay> {
 
   @override
   Widget build(BuildContext context) {
-    final elapsed = widget.stopwatch.elapsed;
-    final hours = elapsed.inHours.toString().padLeft(2, '0');
-    final minutes = (elapsed.inMinutes % 60).toString().padLeft(2, '0');
-    final seconds = (elapsed.inSeconds % 60).toString().padLeft(2, '0');
+    final remaining = _timeLimit - widget.stopwatch.elapsed.inSeconds;
+    final minutes = (remaining ~/ 60).toString().padLeft(2, '0');
+    final seconds = (remaining % 60).toString().padLeft(2, '0');
 
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Text(
-        '$hours:$minutes:$seconds',
+        '$minutes:$seconds',
         style: TextStyle(
           fontSize: 24,
           color: Colors.white,

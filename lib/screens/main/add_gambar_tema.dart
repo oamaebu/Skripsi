@@ -85,19 +85,20 @@ class _AddIsiGambarPageState extends State<AddIsiGambarPagetema> {
     if (pickedFile != null) {
       CroppedFile? croppedFile = await ImageCropper().cropImage(
         sourcePath: pickedFile.path,
-        aspectRatio: CropAspectRatio(ratioX: 1, ratioY: 1),
+        aspectRatio:
+            CropAspectRatio(ratioX: 1, ratioY: 1), // Fixed 1:1 aspect ratio
         uiSettings: [
           AndroidUiSettings(
             toolbarTitle: 'Crop Image',
             toolbarColor: Colors.deepOrange,
             toolbarWidgetColor: Colors.white,
-            initAspectRatio: CropAspectRatioPreset.original,
-            lockAspectRatio: false,
-            
-
+            initAspectRatio: CropAspectRatioPreset
+                .square, // Initialize with square aspect ratio
+            lockAspectRatio: true, // Lock the aspect ratio
           ),
           IOSUiSettings(
             minimumAspectRatio: 1.0,
+            aspectRatioLockEnabled: true, // Lock the aspect ratio on iOS
           ),
         ],
       );

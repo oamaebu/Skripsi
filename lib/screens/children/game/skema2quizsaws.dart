@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:app/models/isi_gambar.dart';
@@ -17,24 +16,25 @@ class GridPage extends StatefulWidget {
 class _GridPageState extends State<GridPage>
     with SingleTickerProviderStateMixin {
   List<String> _images = [];
-  List<String> uniqueImages = [];
   List<String> _correctImages = [];
   List<String> _wrongImages = [];
-  int grid = 6;
-  int gridColumns = 3;
-  int gridRows = 2;
+  List<String> usedImages = [];
   List<String> defaultImages = [
     'assets/images/maskot.png',
     'assets/images/maskot.png',
     'assets/images/maskot.png'
   ];
   late String label;
-  List<bool> _clicked = List.generate(6, (index) => false);
+  List<bool> _clicked = [];
   List<IsiGambar> allImages = [];
   int currentLevel = 1;
-  int totalLevels = 3;
+  final int totalLevels = 3; // Always 3 levels
   late AnimationController _animationController;
-  List<bool> _showRedMark = List.generate(6, (index) => false);
+  List<bool> _showRedMark = [];
+
+  // Add variables to track grid size
+  int gridColumns = 3;
+  int gridRows = 2;
 
   @override
   void initState() {
@@ -52,10 +52,26 @@ class _GridPageState extends State<GridPage>
     super.dispose();
   }
 
+  Future<void> _fetchImages() async {
+    final provider = Provider.of<IsiGambarProvider>(context, listen: false);
+    await provider.fetchIsiGambarList();
+
+    allImages = provider.getGambarByTema(widget.idTema);
+
+    // Duplicate images if we don't have enough for all levels
+    int totalImagesNeeded =
+        4 * 3 * totalLevels; // Maximum grid size * total levels
+    while (allImages.length < totalImagesNeeded) {
+      allImages.addAll(List.from(allImages));
+    }
+
+    _setupCurrentLevel();
+  }
+
   void _goToNextLevel() {
     if (currentLevel < totalLevels) {
       currentLevel++;
-      // Adjust grid size based on the level
+      // Change grid size based on the current level
       if (currentLevel == 2) {
         gridColumns = 3;
         gridRows = 3;
@@ -65,110 +81,78 @@ class _GridPageState extends State<GridPage>
       }
       _setupCurrentLevel();
     } else {
-      showNotEnoughImagesDialog();
+      showGameCompletedDialog();
     }
-  }
-
-  Future<void> _fetchImages() async {
-    final provider = Provider.of<IsiGambarProvider>(context, listen: false);
-    await provider.fetchIsiGambarList();
-
-    allImages = provider.getGambarByTema(widget.idTema);
-
-    print('Total levels: $totalLevels');
-
-    _setupCurrentLevel();
   }
 
   void _setupCurrentLevel() {
-    // Determine the number of images needed for the current level
-    int imagesNeeded = gridColumns * gridRows;
+    int totalImages = gridColumns * gridRows;
+    int correctImagesCount = 3; // Always 3 correct images
 
-    // Reset _images
-    _images = [];
+    _correctImages = [];
+    _wrongImages = [];
 
-    // Use available unique images first
-    int uniqueImagesAvailable =
-        allImages.length * 3; // Each allImages entry has 3 images
-    int uniqueImagesToUse = min(uniqueImagesAvailable, imagesNeeded);
-
-    for (int i = 0; i < uniqueImagesToUse; i++) {
-      int imageSetIndex = i ~/ 3;
-      int imageIndex = i % 3;
-      String imagePath;
-      switch (imageIndex) {
-        case 0:
-          imagePath = allImages[imageSetIndex].gambar1;
-          break;
-        case 1:
-          imagePath = allImages[imageSetIndex].gambar2;
-          break;
-        case 2:
-          imagePath = allImages[imageSetIndex].gambar3;
-          break;
-        default:
-          imagePath = defaultImages[0];
+    if (currentLevel == 1) {
+      // For the first level, use all available images from the database
+      for (var isiGambar in allImages) {
+        _correctImages.add(isiGambar.gambar1 ?? '');
+        _correctImages.add(isiGambar.gambar2 ?? '');
+        _correctImages.add(isiGambar.gambar3 ?? '');
       }
-      _images.add(imagePath);
+      _correctImages.removeWhere((image) => image.isEmpty);
+      usedImages = List.from(_correctImages);
+    } else {
+      // For subsequent levels, use 3 default images and 6 from the previous level
+      _correctImages = List.from(defaultImages);
+      _correctImages.addAll(usedImages.take(6));
     }
 
-    // Fill the rest with default images
-    while (_images.length < imagesNeeded) {
-      _images.add(defaultImages[_images.length % defaultImages.length]);
-    }
+    // Shuffle and take only 3 correct images
+    _correctImages.shuffle();
+    _correctImages = _correctImages.take(3).toList();
 
-    // Shuffle images
+    label = allImages.isNotEmpty ? allImages[0].label : '';
+ 
+    // Fill the rest with wrong images
+    _wrongImages = List.from(usedImages)..addAll(defaultImages);
+    _wrongImages.removeWhere((image) => _correctImages.contains(image));
+    _wrongImages.shuffle();
+    _wrongImages = _wrongImages.take(totalImages - 3).toList();
+
+    _images = List.from(_correctImages)..addAll(_wrongImages);
     _images.shuffle();
 
-    // Set correct images (always the first set in allImages)
-    if (allImages.isNotEmpty) {
-      _correctImages = [
-        allImages[0].gambar1,
-        allImages[0].gambar2,
-        allImages[0].gambar3,
-      ];
-      label = allImages[0].label;
-    } else {
-      // If no unique images available, use first three default images as correct
-      _correctImages = defaultImages.take(3).toList();
-      label = 'Default Label';
+    // Ensure _images has exactly totalImages elements
+    while (_images.length < totalImages) {
+      _images.add(defaultImages[0]); // Add default image
     }
+    _images = _images.take(totalImages).toList();
 
-    // Initialize clicked and showRedMark lists
     _clicked = List.generate(_images.length, (index) => false);
     _showRedMark = List.generate(_images.length, (index) => false);
 
-    // Trigger UI update
     setState(() {});
   }
 
   void _checkIfCorrectImagesSelected() {
-    // Get indices of clicked correct images
-    List<int> correctIndices = _images
-        .asMap()
-        .entries
-        .where((entry) {
-          int index = entry.key;
-          String image = entry.value;
-          return _correctImages.contains(image) && _clicked[index];
-        })
-        .map((entry) => entry.key)
-        .toList();
+    int selectedCount = _clicked.where((isSelected) => isSelected).length;
 
-    // Check if exactly three correct images are selected
-    bool allCorrectSelected = correctIndices.length == 3;
+    if (selectedCount > 3) {
+      // If more than 3 images are selected, do nothing
+      return;
+    }
 
-    if (allCorrectSelected) {
-      _goToNextLevel();
-    } else {
-      // If any wrong image is selected, show red marks
-      bool anyWrongSelected = _clicked.asMap().entries.any((entry) {
+    if (selectedCount == 3) {
+      bool allCorrect = _clicked.asMap().entries.every((entry) {
         int index = entry.key;
         bool isSelected = entry.value;
-        return isSelected && !_correctImages.contains(_images[index]);
+        return !isSelected || _correctImages.contains(_images[index]);
       });
 
-      if (anyWrongSelected) {
+      if (allCorrect) {
+        _goToNextLevel();
+      } else {
+        // Show wrong selection feedback
         _animationController.forward(from: 0.0);
         setState(() {
           _showRedMark = List.generate(_images.length, (index) {
@@ -185,17 +169,18 @@ class _GridPageState extends State<GridPage>
     }
   }
 
-  void showNotEnoughImagesDialog() {
+  void showGameCompletedDialog() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Game Over'),
-        content: Text('You have completed all available levels.'),
+        title: Text('Congratulations!'),
+        content: Text('You have completed all 3 levels.'),
         actions: <Widget>[
           TextButton(
             child: Text('OK'),
             onPressed: () {
               Navigator.of(context).pop();
+              // You might want to navigate back to the main menu or restart the game here
             },
           ),
         ],
@@ -205,13 +190,6 @@ class _GridPageState extends State<GridPage>
 
   @override
   Widget build(BuildContext context) {
-    int asd = _images.length;
-    print(_images);
-    final animation = Tween<Offset>(
-      begin: Offset.zero,
-      end: Offset(0.05, 0),
-    ).chain(CurveTween(curve: Curves.elasticIn)).animate(_animationController);
-
     return Scaffold(
       appBar: AppBar(
         actions: [
@@ -255,7 +233,7 @@ class _GridPageState extends State<GridPage>
             Column(
               children: [
                 Text(
-                  'Pilih Gambar', // Display the fixed text at the top
+                  'Pilih Gambar',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: MediaQuery.of(context).size.width * 0.05,
@@ -263,7 +241,7 @@ class _GridPageState extends State<GridPage>
                   ),
                 ),
                 Text(
-                  label ?? '', // Display isiGambar.label if not null
+                  label ?? '',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: MediaQuery.of(context).size.width * 0.1,
@@ -280,7 +258,7 @@ class _GridPageState extends State<GridPage>
                     : Container(
                         child: GridView.count(
                           shrinkWrap: true,
-                          crossAxisCount: 3,
+                          crossAxisCount: gridColumns,
                           children:
                               List.generate(gridColumns * gridRows, (index) {
                             return GestureDetector(
@@ -339,8 +317,8 @@ class _GridPageState extends State<GridPage>
   }
 
   ImageProvider _getImageProvider(String imageUrl) {
-    if (imageUrl.isEmpty) {
-      return AssetImage('assets/images/maskot.png');
+    if (imageUrl.startsWith('assets/')) {
+      return AssetImage(imageUrl);
     } else if (imageUrl.startsWith('http')) {
       return NetworkImage(imageUrl);
     } else if (imageUrl.startsWith('/data/user/0/com.example.app/cache/')) {

@@ -27,7 +27,7 @@ class DatabaseHelper {
   String TemaTable = 'Tema';
   String TemaColId = 'id';
   String TemaColInamaTema = 'namaTema';
-   String TemaColStatus = 'status';
+  String TemaColStatus = 'status';
 
   // PUZZLE Table
   String puzzleTable = 'puzzle';
@@ -50,7 +50,6 @@ class DatabaseHelper {
   String gambarColIdSuara = 'suara';
   String gambarColIdStatus = 'Status';
 
-
   // GARIS Table
   String garisTable = 'garis';
   String garisColId = 'id';
@@ -62,13 +61,11 @@ class DatabaseHelper {
   // GAME_STATE Table
   String gameStateTable = 'game_state';
   String gameStateColId = 'id';
-  String gameStateColIdGame = 'id_gambar';
   String gameStateColIdAnak = 'id_anak';
   String gameStateColWaktu = 'waktu';
   String gameStateColTanggal = 'tanggal';
-  String gameStateColSalah = 'jumlah_salah';
-    String gameStateColSkema = 'skema';
-
+  String gameStateColPoin = 'poin';
+  String gameStateColSkema = 'skema';
 
   Future<Database> get db async {
     if (_db == null) {
@@ -113,7 +110,6 @@ class DatabaseHelper {
       '$gambarColIdgambar3 TEXT, '
       '$gambarColIdSuara TEXT, '
       '$gambarColIdStatus BOOLEAN, '
-      
       'FOREIGN KEY ($gambarColLIDtema) REFERENCES $TemaTable ($TemaColId)'
       ')',
     );
@@ -123,7 +119,7 @@ class DatabaseHelper {
     await db.execute(
         'CREATE TABLE $TemaTable($TemaColId INTEGER PRIMARY KEY, $TemaColInamaTema TEXT, $TemaColStatus BOOLEAN)');
     await db.execute(
-      'CREATE TABLE $gameStateTable($gameStateColId INTEGER PRIMARY KEY, $gameStateColTanggal TEXT, $gameStateColIdGame INTEGER , $gameStateColSkema INTEGER, $gameStateColSalah INTEGER, $gameStateColWaktu TIME, $gameStateColIdAnak INTEGER, FOREIGN KEY ($gameStateColIdGame) REFERENCES $gambarTable ($gambarColId), FOREIGN KEY ($gameStateColIdAnak) REFERENCES $anakTable ($anakColId))',
+      'CREATE TABLE $gameStateTable($gameStateColId INTEGER PRIMARY KEY, $gameStateColTanggal TEXT, $gameStateColSkema INTEGER, $gameStateColPoin INTEGER, $gameStateColWaktu TIME, $gameStateColIdAnak INTEGER, FOREIGN KEY ($gameStateColIdAnak) REFERENCES $anakTable ($anakColId))',
     );
   }
 
@@ -207,7 +203,7 @@ class DatabaseHelper {
     final int result = await db.insert(anakTable, Anak.toMap());
     return result;
   }
-  
+
   Future<List<Map<String, dynamic>>> getTemaMapList() async {
     Database db = await instance.db;
     return await db.query('tema');
@@ -251,6 +247,7 @@ class DatabaseHelper {
       whereArgs: [id],
     );
   }
+
   Future<int> updateAnak(Anak anak) async {
     final db = await this.db;
     final int result = await db.update(

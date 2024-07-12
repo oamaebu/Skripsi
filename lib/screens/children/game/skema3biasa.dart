@@ -81,7 +81,7 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3> {
     }
   }
 
-  matTime(Duration duration) {
+  String _formatTime(Duration duration) {
     String twoDigits(int n) => n.toString().padLeft(2, '0');
     final hours = twoDigits(duration.inHours);
     final minutes = twoDigits(duration.inMinutes.remainder(60));
@@ -167,6 +167,7 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3> {
     setState(() {
       if (pieces.isNotEmpty && displayedPieces.length < rows * cols) {
         displayedPieces.add(pieces.removeAt(0));
+        print('Pieces remaining: ${pieces.length}');
       }
     });
   }
@@ -347,11 +348,7 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3> {
                       flex: 2,
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          Expanded(child: _buildNavigationButtonsleft(context)),
-                          Expanded(
-                              child: _buildNavigationButtonsright(context)),
-                        ],
+                        children: [],
                       ),
                     ),
                   ),
@@ -395,7 +392,8 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3> {
                                       child: Text(
                                         'Main Sekarang',
                                         style: TextStyle(
-                                          color: Colors.white,
+                                          color: Colors
+                                              .white, // Change this to any color you want
                                         ),
                                       ))),
                               Flexible(
@@ -454,18 +452,14 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3> {
             shape: BoxShape.circle,
             border: Border.all(
               width: 3,
-              color: _currentIndex > 0
-                  ? const Color.fromARGB(255, 255, 255, 255)
-                  : Colors.grey,
+              color: _currentIndex > 0 ? Colors.lightBlueAccent : Colors.grey,
             ),
           ),
           child: IconButton(
             icon: Icon(Icons.arrow_back,
                 size: MediaQuery.of(context).size.width *
                     0.1), // Adjust icon size
-            color: _currentIndex > 0
-                ? const Color.fromARGB(255, 255, 255, 255)
-                : Colors.grey,
+            color: _currentIndex > 0 ? Colors.black : Colors.grey,
             onPressed: (_currentIndex > 0)
                 ? () => _navigateToLevel(_currentIndex - 1)
                 : null,
@@ -490,7 +484,7 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3> {
             border: Border.all(
               width: 3,
               color: _currentIndex < _currentIsiGambarList.length - 1
-                  ? Color.fromARGB(255, 255, 255, 255)
+                  ? Colors.lightBlueAccent
                   : Colors.grey,
             ),
           ),
@@ -499,7 +493,7 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3> {
                 size: MediaQuery.of(context).size.width *
                     0.1), // Adjust icon size
             color: _currentIndex < _currentIsiGambarList.length - 1
-                ? const Color.fromARGB(255, 255, 255, 255)
+                ? Colors.black
                 : Colors.grey,
             onPressed: (_currentIndex < _currentIsiGambarList.length - 1)
                 ? () => _navigateToLevel(_currentIndex + 1)
@@ -537,98 +531,53 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3> {
             point = point + 3;
         }
         if (_currentIndex == _currentIsiGambarList.length - 1) {
+          _stopwatch.stop();
+          String finalTime = _formatTime(_stopwatch.elapsed);
           AwesomeDialog(
             context: context,
             dialogType: DialogType.success,
-            animType: AnimType.scale,
-            title: 'Selamat!',
-            desc: 'Kamu telah menyelesaikan semua level!\n\nWaktu kamu:}',
-            btnOkText: 'Selesai',
-            btnOkColor: Colors.blue,
-            titleTextStyle: TextStyle(
-              color: Colors.blue[800],
-              fontSize: 30,
-              fontWeight: FontWeight.bold,
-            ),
-            descTextStyle: TextStyle(
-              color: Colors.blue[600],
-              fontSize: 20,
-            ),
-            dialogBackgroundColor: Colors.lightBlue[50],
-            borderSide: BorderSide(color: Colors.blue, width: 3),
-            width: 420,
-            buttonsBorderRadius: BorderRadius.circular(20),
-            barrierColor: Colors.black54,
-            dismissOnTouchOutside: false,
-            headerAnimationLoop: false,
-            buttonsTextStyle: TextStyle(color: Colors.white, fontSize: 20),
-            showCloseIcon: false,
+            animType: AnimType.rightSlide,
+            title: 'Congratulations!',
+            desc: 'You have completed all levels!\nYour time: $finalTime',
+            btnOkText: 'Finish',
             btnOkOnPress: () {
-              Navigator.of(context).pop();
+              Navigator.of(context).pop(); // Return to previous screen
             },
-          ).show();
+            btnOkColor: Colors.blueAccent,
+            titleTextStyle: TextStyle(color: Colors.black),
+            descTextStyle: TextStyle(color: Colors.black),
+          )..show();
           _completeLevel(idAnak);
         } else {
           AwesomeDialog(
             context: context,
             dialogType: DialogType.success,
-            animType: AnimType.bottomSlide,
-            title: 'Hebat!',
-            desc: 'Kamu berhasil menyelesaikan puzzle ini!',
-            btnOkText: 'Lanjut',
-            btnOkColor: Colors.blue,
-            titleTextStyle: TextStyle(
-              color: Colors.blue[800],
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-            ),
-            descTextStyle: TextStyle(
-              color: Colors.blue[600],
-              fontSize: 18,
-            ),
-            dialogBackgroundColor: Colors.lightBlue[50],
-            borderSide: BorderSide(color: Colors.blue, width: 2),
-            width: 400,
-            buttonsBorderRadius: BorderRadius.circular(20),
-            barrierColor: Colors.black45,
-            dismissOnTouchOutside: false,
-            headerAnimationLoop: false,
-            buttonsTextStyle: TextStyle(color: Colors.white, fontSize: 18),
-            showCloseIcon: false,
+            animType: AnimType.rightSlide,
+            title: 'Congratulations!',
+            desc: 'You have completed the puzzle.',
             btnOkOnPress: () {
               _loadNextLevel();
             },
-          ).show();
+          )..show();
         }
       } else {
-        AwesomeDialog(
+        showDialog(
           context: context,
-          dialogType: DialogType.info,
-          animType: AnimType.scale,
-          title: 'Belum Tepat',
-          desc: 'Ayo coba lagi! Kamu pasti bisa.',
-          btnOkText: 'OK!',
-          btnOkColor: Colors.lightBlueAccent,
-          titleTextStyle: TextStyle(
-            color: Colors.blue[800],
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
-          descTextStyle: TextStyle(
-            color: Colors.blue[600],
-            fontSize: 18,
-          ),
-          dialogBackgroundColor: Colors.white,
-          borderSide: BorderSide(color: Colors.lightBlueAccent, width: 3),
-          buttonsBorderRadius: BorderRadius.circular(20),
-          barrierColor: Colors.black54,
-          dismissOnTouchOutside: false,
-          headerAnimationLoop: false,
-          buttonsTextStyle: TextStyle(color: Colors.white, fontSize: 18),
-          showCloseIcon: true,
-          closeIcon: Icon(Icons.close_rounded, color: Colors.blue[800]),
-          btnOkOnPress: () {},
-        ).show();
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('Not Yet!'),
+              content: Text('The puzzle is not yet completed correctly.'),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: Text('Close'),
+                ),
+              ],
+            );
+          },
+        );
       }
     }
   }
@@ -710,11 +659,11 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3> {
         setState(() {
           fullImage = image;
           pieces = _generatePuzzlePieces(image);
-          displayedPieces.clear(); // Clear all displayed pieces
+          displayedPieces.clear();
           lockedPieceCount = 0;
-
-          // Don't add any pieces to displayedPieces
-          // The user will need to click "Main Sekarang" to start
+          if (pieces.isNotEmpty) {
+            displayedPieces.add(pieces.removeAt(0));
+          }
         });
       });
     });

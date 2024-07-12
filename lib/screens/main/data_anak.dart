@@ -56,7 +56,6 @@ class DetailPage extends HookWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
-                  
                       SizedBox(height: 10),
                       profilAnak(),
                       SizedBox(height: 25),
@@ -83,7 +82,7 @@ class DetailPage extends HookWidget {
                         valueListenable: selectedStatistik,
                         builder: (context, value, child) {
                           if (value == 'waktu') {
-                            return StatistikAnak(childId: childId.toString());
+                            return StatistikWaktuAnak(childId: childId.toString());
                           } else {
                             return StatistikSalahAnak(
                                 childId: childId.toString());

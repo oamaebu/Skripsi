@@ -30,7 +30,7 @@ class UserModel with ChangeNotifier {
     if (success) {
       _username = username;
       notifyListeners();
-      Navigator.pushReplacementNamed(context, '/profilanak');
+      Navigator.pushReplacementNamed(context, '/MainScreen');
     } else {
       showDialog(
         context: context,

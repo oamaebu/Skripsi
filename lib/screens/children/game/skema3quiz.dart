@@ -1,8 +1,7 @@
-import 'dart:io';
+import 'dart:io' as io;
 import 'package:app/models/isi_gambar.dart';
 import 'package:app/provider/anak_provider.dart';
 import 'package:app/provider/gambar_provider.dart';
-import 'package:app/screens/children/game/garis/garis.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -24,9 +23,10 @@ class JigsawPuzzleScreenSkema3quiz extends StatefulWidget {
 }
 
 class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3quiz> {
+  bool _isTimeUp = false;
+  int point = 0;
   late Stopwatch _stopwatch;
   late GameStateProvider _gameStateProvider;
-  int _wrongChoices = 0;
   bool isPreviousPiecePlaced = true;
   int lockedPieceCount = 0;
   final int rows = 2;
@@ -63,21 +63,38 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3quiz> {
     });
   }
 
-  void _saveGameState(String time, int idAnak, int id_gambar) {
+  void _onTimeUp() {
+    if (!_isTimeUp) {
+      _isTimeUp = true;
+      _stopwatch.stop();
+      AwesomeDialog(
+        context: context,
+        dialogType: DialogType.info,
+        animType: AnimType.rightSlide,
+        title: 'Time\'s Up!',
+        desc: 'You\'ve reached the 5-minute time limit.',
+        btnOkText: 'OK',
+        btnOkOnPress: () {
+          Navigator.of(context).pop();
+        },
+      )..show();
+    }
+  }
+
+  void _saveGameState(String time, int idAnak, int poin) {
     final now = DateTime.now();
     final date = '${now.year}-${now.month}-${now.day}';
 
     final gameState = {
       'id': null,
-      'id_gambar': id_gambar, // Assuming this is for the jigsaw puzzle game
       'waktu': time,
       'id_anak': idAnak, // Set the child ID appropriately
       'tanggal': date,
-      'jumlah_salah': _wrongChoices,
+      'poin': poin,
       'skema': 3
     };
+
     _gameStateProvider.addGameState(gameState);
-    print('jumlah_salah: ${gameState['jumlah_salah']}');
   }
 
   String _formatTime(Duration duration) {
@@ -89,20 +106,9 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3quiz> {
   }
 
   void _completeLevel(int idAnak) {
-    _stopwatch.stop();
     _player.play(AssetSource('sound/correct.mp3'));
     final idGambar = _currentIsiGambarList[_currentIndex].id;
-    _saveGameState(_formatTime(_stopwatch.elapsed), idAnak, idGambar!);
-    AwesomeDialog(
-      context: context,
-      dialogType: DialogType.success,
-      animType: AnimType.rightSlide,
-      title: 'Congratulations!',
-      desc: 'You have completed the puzzle.',
-      btnOkOnPress: () {
-        _loadNextLevel();
-      },
-    )..show();
+    _saveGameState(_formatTime(_stopwatch.elapsed), idAnak, point);
   }
 
   Future<void> _initPlayer() async {
@@ -120,11 +126,15 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3quiz> {
     }
   }
 
+  bool _isLoading = false;
+
   void _loadCurrentLevel() {
+    if (_isLoading) return;
+    _isLoading = true;
+
     if (_currentIsiGambarList.isNotEmpty &&
         _currentIndex >= 0 &&
         _currentIndex < _currentIsiGambarList.length) {
-      _resetStopwatch(); // Add this line to reset the timer
       String imagePath = getStatusSkemaValue();
       _loadImage1(imagePath).then((image) {
         setState(() {
@@ -132,11 +142,12 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3quiz> {
           pieces = _generatePuzzlePieces(image);
           displayedPieces.clear();
           lockedPieceCount = 0;
-          if (pieces.isNotEmpty) {
-            displayedPieces.add(pieces.removeAt(0));
-          }
+
+          _isLoading = false;
         });
       });
+    } else {
+      _isLoading = false;
     }
   }
 
@@ -160,7 +171,7 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3quiz> {
   }
 
   Future<ui.Image> _loadImage1(String asset) async {
-    File file = File(asset);
+    io.File file = io.File(asset);
     final Uint8List bytes = await file.readAsBytes();
     final Completer<ui.Image> completer = Completer();
     ui.decodeImageFromList(bytes, (ui.Image img) {
@@ -173,7 +184,6 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3quiz> {
     setState(() {
       if (pieces.isNotEmpty && displayedPieces.length < rows * cols) {
         displayedPieces.add(pieces.removeAt(0));
-        print('Pieces remaining: ${pieces.length}');
       }
     });
   }
@@ -189,6 +199,14 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3quiz> {
     final completer = Completer<ui.Image>();
     ui.decodeImageFromList(list, completer.complete);
     return completer.future;
+  }
+
+  String toTitleCase(String text) {
+    if (text.isEmpty) return text;
+    return text.split(' ').map((word) {
+      if (word.isEmpty) return word;
+      return word[0].toUpperCase() + word.substring(1).toLowerCase();
+    }).join(' ');
   }
 
   List<Piece> _generatePuzzlePieces(ui.Image image) {
@@ -224,13 +242,11 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3quiz> {
 
   @override
   Widget build(BuildContext context) {
-    if (fullImage == null || displayedPieces.isEmpty) {
-      _loadCurrentLevel();
-    }
     screenWidth = MediaQuery.of(context).size.width;
     screenHeight = MediaQuery.of(context).size.height;
     final anakProvider = Provider.of<AnakProvider>(context);
     final currentAnak = anakProvider.currentAnak;
+    final label = _currentIsiGambarList[_currentIndex].label;
 
     return Scaffold(
       appBar: AppBar(
@@ -240,32 +256,62 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3quiz> {
         ),
         backgroundColor: Colors.blue,
         actions: [
-          TimerDisplay(stopwatch: _stopwatch, currentLevel: _currentIndex),
+          TimerDisplay(
+              stopwatch: _stopwatch,
+              onTimeUp: _onTimeUp,
+              currentLevel: _currentIndex),
         ],
       ),
       body: fullImage == null
           ? Center(child: CircularProgressIndicator())
           : Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.white, Colors.white],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
+              color: Colors.lightBlueAccent,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: <Widget>[
                   Padding(
-                    padding: const EdgeInsets.all(10.0),
-                    child: Container(
-                      alignment: AlignmentDirectional.topEnd,
-                      child: IconButton(
-                        icon: Icon(Icons.volume_up,
-                            size: MediaQuery.of(context).size.width * 0.12,
-                            color: Colors.blue),
-                        onPressed: _initPlayer,
-                      ),
+                    padding: const EdgeInsets.all(8.0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          flex: 1,
+                          child: Container(
+                            height: MediaQuery.of(context).size.height *
+                                0.1, // 20% of the screen height
+                            width: MediaQuery.of(context).size.width *
+                                0.1, // 20% of the screen width
+                            child: _buildNextPiecePreview(),
+                          ),
+                        ),
+                        Expanded(
+                          flex: 3,
+                          child: Center(
+                            child: Text(
+                              toTitleCase('$label'),
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize:
+                                    MediaQuery.of(context).size.width * 0.10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          flex: 1,
+                          child: Container(
+                            alignment: Alignment.centerRight,
+                            child: IconButton(
+                              icon: Icon(
+                                Icons.volume_up,
+                                size: MediaQuery.of(context).size.width * 0.12,
+                                color: const Color.fromARGB(255, 255, 255, 255),
+                              ),
+                              onPressed: _initPlayer,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   Expanded(
@@ -273,6 +319,7 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3quiz> {
                     child: AspectRatio(
                       aspectRatio: fullImage!.width / fullImage!.height,
                       child: Container(
+                        color: Color.fromARGB(255, 211, 209, 209),
                         child: LayoutBuilder(
                           builder: (context, constraints) {
                             final scaleX =
@@ -318,16 +365,12 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3quiz> {
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.all(1.0),
+                    padding: const EdgeInsets.all(8.0),
                     child: Expanded(
                       flex: 2,
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          Expanded(child: _buildNavigationButtonsleft(context)),
-                          Expanded(
-                              child: _buildNavigationButtonsright(context)),
-                        ],
+                        children: [],
                       ),
                     ),
                   ),
@@ -359,15 +402,21 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3quiz> {
                                 ),
                               ),
                               Flexible(
-                                flex: 3,
-                                child: Container(
-                                  height: MediaQuery.of(context).size.height *
-                                      0.2, // 20% of the screen height
-                                  width: MediaQuery.of(context).size.width *
-                                      0.2, // 20% of the screen width
-                                  child: _buildNextPiecePreview(),
-                                ),
-                              ),
+                                  flex: 3,
+                                  child: ElevatedButton(
+                                      style: ButtonStyle(
+                                        backgroundColor:
+                                            MaterialStateProperty.all<Color>(
+                                                Colors.blue),
+                                      ),
+                                      onPressed:
+                                          pieces.isNotEmpty ? _addPiece : null,
+                                      child: Text(
+                                        'Main Sekarang',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                        ),
+                                      ))),
                               Flexible(
                                 flex: 2,
                                 child: Container(
@@ -401,10 +450,12 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3quiz> {
   void _navigateToLevel(int index) {
     if (index >= 0 && index < _currentIsiGambarList.length) {
       setState(() {
+        displayedPieces.clear();
+        lockedPieceCount = 0;
         _currentIndex = index;
         _loadCurrentLevel();
       });
-      _resetStopwatch(); // Add this line to reset the timer
+
       _initPlayer();
     }
   }
@@ -477,6 +528,9 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3quiz> {
 
   void _checkCompletion1(int idAnak) {
     bool allCorrect = true;
+    int angka = _currentIsiGambarList.length;
+    bool sas = _currentIndex == _currentIsiGambarList.length - 1;
+    print(sas);
 
     // Check if all pieces are placed correctly
     for (var piece in displayedPieces) {
@@ -489,51 +543,125 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3quiz> {
     if (pieces.isEmpty && displayedPieces.length == rows * cols) {
       // Check if puzzle is completed and all pieces are correctly placed
       if (allCorrect) {
-        _completeLevel(idAnak);
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: Text('Congratulations!'),
-              content: Text('You have completed the puzzle!'),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    _loadNextLevel();
-                  },
-                  child: Text('Next Level'),
-                ),
-              ],
-            );
-          },
-        );
+        switch (_currentIsiGambarList[_currentIndex].tingkatKesulitan) {
+          case 'mudah':
+            point = point + 1;
+          case 'sedang':
+            point = point + 2;
+          case 'sulit':
+            point = point + 3;
+        }
+        if (_currentIndex == _currentIsiGambarList.length - 1) {
+          _stopwatch.stop();
+          String finalTime = _formatTime(_stopwatch.elapsed);
+          AwesomeDialog(
+            context: context,
+            dialogType: DialogType.success,
+            animType: AnimType.scale,
+            title: 'Selamat!',
+            desc:
+                'Kamu telah menyelesaikan semua level!\n\nWaktu kamu: ${_formatTime(_stopwatch.elapsed)}',
+            btnOkText: 'Selesai',
+            btnOkColor: Colors.blue,
+            titleTextStyle: TextStyle(
+              color: Colors.blue[800],
+              fontSize: 30,
+              fontWeight: FontWeight.bold,
+            ),
+            descTextStyle: TextStyle(
+              color: Colors.blue[600],
+              fontSize: 20,
+            ),
+            dialogBackgroundColor: Colors.lightBlue[50],
+            borderSide: BorderSide(color: Colors.blue, width: 3),
+            width: 420,
+            buttonsBorderRadius: BorderRadius.circular(20),
+            barrierColor: Colors.black54,
+            dismissOnTouchOutside: false,
+            headerAnimationLoop: false,
+            buttonsTextStyle: TextStyle(color: Colors.white, fontSize: 20),
+            showCloseIcon: false,
+            btnOkOnPress: () {
+              Navigator.of(context).pop();
+            },
+          ).show();
+          _completeLevel(idAnak);
+        } else {
+          AwesomeDialog(
+            context: context,
+            dialogType: DialogType.success,
+            animType: AnimType.bottomSlide,
+            title: 'Hebat!',
+            desc: 'Kamu berhasil menyelesaikan puzzle ini!',
+            btnOkText: 'Lanjut',
+            btnOkColor: Colors.blue,
+            titleTextStyle: TextStyle(
+              color: Colors.blue[800],
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+            ),
+            descTextStyle: TextStyle(
+              color: Colors.blue[600],
+              fontSize: 18,
+            ),
+            dialogBackgroundColor: Colors.lightBlue[50],
+            borderSide: BorderSide(color: Colors.blue, width: 2),
+            width: 400,
+            buttonsBorderRadius: BorderRadius.circular(20),
+            barrierColor: Colors.black45,
+            dismissOnTouchOutside: false,
+            headerAnimationLoop: false,
+            buttonsTextStyle: TextStyle(color: Colors.white, fontSize: 18),
+            showCloseIcon: false,
+            btnOkOnPress: () {
+              _loadNextLevel();
+            },
+          ).show();
+        }
       } else {
-        _wrongChoices++;
-        showDialog(
+        AwesomeDialog(
           context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: Text('Not Yet!'),
-              content: Text('The puzzle is not yet completed correctly.'),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: Text('Close'),
-                ),
-              ],
-            );
+          dialogType: DialogType.info,
+          animType: AnimType.scale,
+          title: 'Belum Tepat',
+          desc: 'Ayo coba lagi! Kamu pasti bisa.',
+          btnOkText: 'OK!',
+          btnOkColor: Colors.lightBlueAccent,
+          titleTextStyle: TextStyle(
+            color: Colors.blue[800],
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+          descTextStyle: TextStyle(
+            color: Colors.blue[600],
+            fontSize: 18,
+          ),
+          dialogBackgroundColor: Colors.white,
+          borderSide: BorderSide(color: Colors.lightBlueAccent, width: 3),
+          buttonsBorderRadius: BorderRadius.circular(20),
+          barrierColor: Colors.black54,
+          dismissOnTouchOutside: false,
+          headerAnimationLoop: false,
+          buttonsTextStyle: TextStyle(color: Colors.white, fontSize: 18),
+          showCloseIcon: true,
+          closeIcon: Icon(Icons.close_rounded, color: Colors.blue[800]),
+          btnOkOnPress: () {
+            _resetPuzzle();
           },
-        );
+        ).show();
       }
     }
   }
 
+  void _showCompletionDialog() {}
+
   void _loadNextLevel() {
     setState(() {
       _currentIndex = (_currentIndex + 1) % _currentIsiGambarList.length;
+      fullImage = null;
+      pieces.clear();
+      displayedPieces.clear();
+      lockedPieceCount = 0;
       _loadCurrentLevel();
     });
   }
@@ -602,66 +730,17 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3quiz> {
         setState(() {
           fullImage = image;
           pieces = _generatePuzzlePieces(image);
-          displayedPieces.clear();
+          displayedPieces.clear(); // Clear all displayed pieces
           lockedPieceCount = 0;
-          if (pieces.isNotEmpty) {
-            displayedPieces.add(pieces.removeAt(0));
-          }
+
+          // Don't add any pieces to displayedPieces
+          // The user will need to click "Main Sekarang" to start
         });
       });
     });
 
     // Replay the audio for the current level
     _initPlayer();
-  }
-
-  void _checkCompletion() {
-    bool allCorrect = true;
-    for (var piece in displayedPieces) {
-      // Iterate through displayed pieces
-      if (!piece.isCorrect) {
-        allCorrect = false;
-        break;
-      }
-    }
-
-    if (allCorrect) {
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text('Congratulations!'),
-            content: Text('You completed the puzzle!'),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: Text('Close'),
-              ),
-            ],
-          );
-        },
-      );
-    } else {
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text('Not Yet!'),
-            content: Text('The puzzle is not yet completed.'),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: Text('Close'),
-              ),
-            ],
-          );
-        },
-      );
-    }
   }
 
   void _onPieceMoved(Piece piece, Offset newPosition) {
@@ -701,7 +780,7 @@ class Piece {
   final Size size;
   bool isCorrect = false;
   bool _isLocked = false;
-  VoidCallback onLocked; // Define isLocked variable
+  ui.VoidCallback onLocked; // Define isLocked variable
 
   bool get isLocked => _isLocked; // Getter for isLocked
 
@@ -890,8 +969,12 @@ class CorrectPositionPainter extends CustomPainter {
 class TimerDisplay extends StatefulWidget {
   final Stopwatch stopwatch;
   final int currentLevel;
+  final ui.VoidCallback onTimeUp;
 
-  TimerDisplay({required this.stopwatch, required this.currentLevel})
+  TimerDisplay(
+      {required this.stopwatch,
+      required this.currentLevel,
+      required this.onTimeUp})
       : super(key: ValueKey(currentLevel));
 
   @override
@@ -900,13 +983,19 @@ class TimerDisplay extends StatefulWidget {
 
 class _TimerDisplayState extends State<TimerDisplay> {
   late Timer _timer;
+  final int _timeLimit = 5 * 60;
 
   @override
   void initState() {
     super.initState();
     _timer = Timer.periodic(Duration(seconds: 1), (timer) {
       if (widget.stopwatch.isRunning) {
-        setState(() {});
+        setState(() {
+          if (widget.stopwatch.elapsed.inSeconds >= _timeLimit) {
+            widget.stopwatch.stop();
+            widget.onTimeUp();
+          }
+        });
       }
     });
   }
@@ -919,15 +1008,14 @@ class _TimerDisplayState extends State<TimerDisplay> {
 
   @override
   Widget build(BuildContext context) {
-    final elapsed = widget.stopwatch.elapsed;
-    final hours = elapsed.inHours.toString().padLeft(2, '0');
-    final minutes = (elapsed.inMinutes % 60).toString().padLeft(2, '0');
-    final seconds = (elapsed.inSeconds % 60).toString().padLeft(2, '0');
+    final remaining = _timeLimit - widget.stopwatch.elapsed.inSeconds;
+    final minutes = (remaining ~/ 60).toString().padLeft(2, '0');
+    final seconds = (remaining % 60).toString().padLeft(2, '0');
 
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Text(
-        '$hours:$minutes:$seconds',
+        '$minutes:$seconds',
         style: TextStyle(
           fontSize: 24,
           color: Colors.white,

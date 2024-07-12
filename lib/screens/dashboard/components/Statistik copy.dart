@@ -46,9 +46,9 @@ class TestState extends State<Test> {
                   return DataRow(
                     cells: [
                       DataCell(Text(gameState['id'].toString())),
-                      DataCell(Text(gameState['jumlah_salah'].toString())),
+                      DataCell(Text(gameState['tanggal'].toString())),
                       DataCell(Text(gameState['waktu'])),
-                      DataCell(Text(gameState['id_gambar'].toString())),
+                      DataCell(Text(gameState['poin'].toString())),
                     ],
                   );
                 },
