@@ -229,6 +229,25 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3> {
     screenHeight = MediaQuery.of(context).size.height;
     final anakProvider = Provider.of<AnakProvider>(context);
     final currentAnak = anakProvider.currentAnak;
+
+    if (_currentIsiGambarList.isEmpty) {
+      return Scaffold(
+        backgroundColor: Colors.blue,
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+    // Check if fullImage is null (level is still loading)
+    if (fullImage == null) {
+      return Scaffold(
+        backgroundColor: Colors.blue,
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
     final label = _currentIsiGambarList[_currentIndex].label;
 
     return Scaffold(
@@ -293,52 +312,57 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3> {
                   ),
                   Expanded(
                     flex: 12,
-                    child: AspectRatio(
-                      aspectRatio: fullImage!.width / fullImage!.height,
-                      child: Container(
-                        color: Color.fromARGB(255, 211, 209, 209),
-                        child: LayoutBuilder(
-                          builder: (context, constraints) {
-                            final scaleX =
-                                constraints.maxWidth / fullImage!.width;
-                            final scaleY =
-                                constraints.maxHeight / fullImage!.height;
-                            final scale = min(scaleX, scaleY);
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        AspectRatio(
+                          aspectRatio: fullImage!.width / fullImage!.height,
+                          child: Container(
+                            color: Color.fromARGB(255, 255, 255, 255),
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                final scaleX =
+                                    constraints.maxWidth / fullImage!.width;
+                                final scaleY =
+                                    constraints.maxHeight / fullImage!.height;
+                                final scale = min(scaleX, scaleY);
 
-                            return Stack(
-                              children: [
-                                CustomPaint(
-                                  size: Size(
-                                    fullImage!.width * scale,
-                                    fullImage!.height * scale,
-                                  ),
-                                  painter: TransparentBackgroundPainter(
-                                    fullImage!,
-                                    Rect.fromLTRB(
-                                      0,
-                                      0,
-                                      fullImage!.width.toDouble(),
-                                      fullImage!.height.toDouble(),
+                                return Stack(
+                                  children: [
+                                    CustomPaint(
+                                      size: Size(
+                                        fullImage!.width * scale,
+                                        fullImage!.height * scale,
+                                      ),
+                                      painter: TransparentBackgroundPainter(
+                                        fullImage!,
+                                        Rect.fromLTRB(
+                                          0,
+                                          0,
+                                          fullImage!.width.toDouble(),
+                                          fullImage!.height.toDouble(),
+                                        ),
+                                        0.3,
+                                      ),
                                     ),
-                                    0.3,
-                                  ),
-                                ),
-                                _buildGridLines(
-                                  scale,
-                                  fullImage!.width,
-                                  fullImage!.height,
-                                ),
-                                for (var piece in displayedPieces)
-                                  DraggablePiece(
-                                    piece: piece,
-                                    onPieceMoved: _onPieceMoved,
-                                    scale: scale,
-                                  ),
-                              ],
-                            );
-                          },
+                                    _buildGridLines(
+                                      scale,
+                                      fullImage!.width,
+                                      fullImage!.height,
+                                    ),
+                                    for (var piece in displayedPieces)
+                                      DraggablePiece(
+                                        piece: piece,
+                                        onPieceMoved: _onPieceMoved,
+                                        scale: scale,
+                                      ),
+                                  ],
+                                );
+                              },
+                            ),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
                   ),
                   Padding(
@@ -542,7 +566,7 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3> {
             dialogType: DialogType.success,
             animType: AnimType.scale,
             title: 'Selamat!',
-            desc: 'Kamu telah menyelesaikan semua level!\n\nWaktu kamu:}',
+            desc: 'Kamu telah menyelesaikan semua level!',
             btnOkText: 'Selesai',
             btnOkColor: Colors.blue,
             titleTextStyle: TextStyle(

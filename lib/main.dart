@@ -1,4 +1,3 @@
-import 'package:app/models/dashboard/children/data.dart';
 import 'package:app/provider/gambar_provider.dart';
 import 'package:app/provider/tema_provider.dart';
 import 'package:flutter/material.dart';
@@ -13,7 +12,7 @@ import 'models/user.dart';
 import 'provider/anak_provider.dart';
 import 'provider/game_provider.dart';
 import 'provider/game_state_provider.dart';
-import 'provider/garis_provider.dart';
+
 import 'provider/puzzle_provider.dart';
 import 'provider/skema_provider.dart';
 import 'screens/SignUp.dart';
@@ -32,11 +31,9 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => MenuAppController()),
-        ChangeNotifierProvider(create: (context) => GameState()),
         ChangeNotifierProvider(create: (context) => AnakProvider()),
         ChangeNotifierProvider(create: (context) => GameProvider()),
         ChangeNotifierProvider(create: (context) => PuzzleProvider()),
-        ChangeNotifierProvider(create: (context) => GarisProvider()),
         ChangeNotifierProvider(create: (context) => GameStateProvider()),
         ChangeNotifierProvider(create: (context) => IsiGambarProvider()),
         ChangeNotifierProvider(create: (context) => SkemaProvider()),

@@ -37,7 +37,8 @@ class StatistikSalahAnakState extends State<StatistikSalahAnak> {
     print(
         'Last Five Days: ${lastFiveDays.map((d) => DateFormat('yyyy-M-d').format(d)).join(', ')}');
 
-    final Map<String, int> highestPointsByDate = {};
+    final Map<String, double> averagePointsByDate = {};
+    final Map<String, int> pointsCountByDate = {};
     for (final state in filteredGameStates) {
       final date = DateFormat('yyyy-M-d').parse(state['tanggal']);
       print('Parsing date: ${state['tanggal']} -> $date');
@@ -45,30 +46,37 @@ class StatistikSalahAnakState extends State<StatistikSalahAnak> {
       if (lastFiveDays
           .any((d) => DateFormat('yyyy-M-d').format(d) == dateString)) {
         final points = state['poin'] as int;
-        if (!highestPointsByDate.containsKey(dateString) ||
-            points > highestPointsByDate[dateString]!) {
-          highestPointsByDate[dateString] = points;
+        if (!averagePointsByDate.containsKey(dateString)) {
+          averagePointsByDate[dateString] = 0;
+          pointsCountByDate[dateString] = 0;
         }
+        averagePointsByDate[dateString] =
+            averagePointsByDate[dateString]! + points;
+        pointsCountByDate[dateString] = pointsCountByDate[dateString]! + 1;
       }
     }
-    print('Highest points by date: $highestPointsByDate');
+
+    for (final dateString in averagePointsByDate.keys.toList()) {
+      averagePointsByDate[dateString] =
+          (averagePointsByDate[dateString]! / pointsCountByDate[dateString]!)
+              .roundToDouble();
+    }
 
     final List<BarChartGroupData> barGroups = [];
     for (final date in lastFiveDays) {
       final dateString = DateFormat('yyyy-M-d').format(date);
-      final dayOfWeek = DateFormat('EEEE').format(date);
-      final highestPoints = highestPointsByDate[dateString]?.toDouble() ?? 0.0;
-
-      print(
-          'Date: $dateString, Day: $dayOfWeek, Highest Points: $highestPoints');
+      final dayOfWeek = DateFormat('E').format(date);
+      final averagePoints = averagePointsByDate[dateString]?.toDouble() ?? 0.0;
 
       barGroups.add(
         BarChartGroupData(
           x: lastFiveDays.indexOf(date),
           barRods: [
             BarChartRodData(
-              toY: highestPoints,
+              toY: averagePoints,
               color: Colors.blue,
+              width: 16,
+              borderRadius: BorderRadius.circular(4),
             ),
           ],
           showingTooltipIndicators: [0],
@@ -86,35 +94,88 @@ class StatistikSalahAnakState extends State<StatistikSalahAnak> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "Highest Points Last 5 Days",
+            "Average Points Last 5 Days",
             style: Theme.of(context).textTheme.titleMedium,
           ),
-          SizedBox(
-            width: double.infinity,
-            height: 300,
+          SizedBox(height: 20),
+          AspectRatio(
+            aspectRatio: 1.7,
             child: BarChart(
               BarChartData(
                 alignment: BarChartAlignment.spaceAround,
                 barGroups: barGroups,
+                maxY: 6, // Set a fixed maximum Y value
+                minY: 0, // Set a fixed minimum Y value
+                gridData: FlGridData(
+                  show: true,
+                  drawVerticalLine: false,
+                  horizontalInterval: 1,
+                  getDrawingHorizontalLine: (value) {
+                    return FlLine(
+                      color: Colors.white.withOpacity(0.1),
+                      strokeWidth: 1,
+                    );
+                  },
+                ),
                 titlesData: FlTitlesData(
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(showTitles: true),
-                  ),
+                  show: true,
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
+                      reservedSize: 30,
                       getTitlesWidget: (value, meta) {
                         final index = value.toInt();
                         if (index < 0 || index >= lastFiveDays.length) {
                           return Text('');
                         }
                         final date = lastFiveDays[index];
-                        return Text(DateFormat('E').format(date));
+                        return Text(
+                          DateFormat('E').format(date),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        );
                       },
                     ),
                   ),
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 40,
+                      interval: 1,
+                      getTitlesWidget: (value, meta) {
+                        return Text(
+                          value.toInt().toString(),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  topTitles:
+                      AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  rightTitles:
+                      AxisTitles(sideTitles: SideTitles(showTitles: false)),
                 ),
-                borderData: FlBorderData(show: true),
+                borderData: FlBorderData(show: false),
+                barTouchData: BarTouchData(
+                  touchTooltipData: BarTouchTooltipData(
+                    getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                      return BarTooltipItem(
+                        rod.toY.toStringAsFixed(1),
+                        TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      );
+                    },
+                  ),
+                ),
               ),
             ),
           ),

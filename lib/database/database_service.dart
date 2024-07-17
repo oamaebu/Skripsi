@@ -91,14 +91,19 @@ class DatabaseHelper {
     await db.execute(
       'CREATE TABLE $anakTable($anakColId INTEGER PRIMARY KEY, $anakColNama TEXT, $anakColUmur INTEGER, $anakColKelas TEXT, $anakColKelamin TEXT)',
     );
+
     await db.execute(
-        'CREATE TABLE users(id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, password TEXT)');
+      'CREATE TABLE users(id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, password TEXT)',
+    );
+
     await db.execute(
       'CREATE TABLE $gameTable($gameColId INTEGER PRIMARY KEY, $gameColNamaGame TEXT)',
     );
+
     await db.execute(
-      'CREATE TABLE $puzzleTable($puzzleColId INTEGER PRIMARY KEY, $puzzleColLevel INTEGER, $puzzleColKelas TEXT , $puzzleColGambarBenar TEXT, $puzzleColIdGambarSalah1 TEXT, $puzzleColIdGambarSalah2 TEXT, $puzzleColIdGame INTEGER, FOREIGN KEY ($puzzleColIdGame) REFERENCES $gameTable ($gameColId))',
+      'CREATE TABLE $puzzleTable($puzzleColId INTEGER PRIMARY KEY, $puzzleColLevel INTEGER, $puzzleColKelas TEXT, $puzzleColGambarBenar TEXT, $puzzleColIdGambarSalah1 TEXT, $puzzleColIdGambarSalah2 TEXT, $puzzleColIdGame INTEGER, FOREIGN KEY ($puzzleColIdGame) REFERENCES $gameTable ($gameColId))',
     );
+
     await db.execute(
       'CREATE TABLE $gambarTable('
       '$gambarColId INTEGER PRIMARY KEY, '
@@ -113,11 +118,15 @@ class DatabaseHelper {
       'FOREIGN KEY ($gambarColLIDtema) REFERENCES $TemaTable ($TemaColId)'
       ')',
     );
+
     await db.execute(
       'CREATE TABLE $garisTable($garisColId INTEGER PRIMARY KEY, $garisColLevel INTEGER, $garisColKelas TEXT, $garisColContent TEXT, $garisColIdGame INTEGER, FOREIGN KEY ($garisColIdGame) REFERENCES $gameTable ($gameColId))',
     );
+
     await db.execute(
-        'CREATE TABLE $TemaTable($TemaColId INTEGER PRIMARY KEY, $TemaColInamaTema TEXT, $TemaColStatus BOOLEAN)');
+      'CREATE TABLE $TemaTable($TemaColId INTEGER PRIMARY KEY, $TemaColInamaTema TEXT, $TemaColStatus BOOLEAN)',
+    );
+
     await db.execute(
       'CREATE TABLE $gameStateTable($gameStateColId INTEGER PRIMARY KEY, $gameStateColTanggal TEXT, $gameStateColSkema INTEGER, $gameStateColPoin INTEGER, $gameStateColWaktu TIME, $gameStateColIdAnak INTEGER, FOREIGN KEY ($gameStateColIdAnak) REFERENCES $anakTable ($anakColId))',
     );

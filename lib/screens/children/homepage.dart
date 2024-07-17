@@ -1,5 +1,6 @@
 import 'package:app/provider/tema_provider.dart';
-import 'package:app/screens/children/game/skema1%20copy.dart';
+import 'package:app/screens/children/game/skema2.dart';
+import 'package:app/screens/children/game/skema2quiz.dart';
 import 'package:app/screens/children/game/skema3.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -8,7 +9,6 @@ import 'package:app/component/homepage_drawer.dart';
 import 'package:app/provider/anak_provider.dart';
 import 'package:app/provider/skema_provider.dart';
 import 'package:app/screens/children/game/skema1quiz.dart';
-import 'package:app/screens/children/game/skema2.dart';
 import 'package:app/screens/children/game/skema1.dart';
 import 'package:app/screens/children/game/skema3quiz.dart';
 
@@ -46,7 +46,7 @@ class _HomePageState extends State<HomePage> {
         "title": "skema2",
         "icon": Icons.numbers,
         "route": widget.quiz
-            ? JigsawPuzzleScreenSkema2(idTema: activeTemaId!)
+            ? GridPageQuiz(idTema: activeTemaId!)
             : GridPage(idTema: activeTemaId!),
         "skemaId": '1'
       },

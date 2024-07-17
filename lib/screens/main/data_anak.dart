@@ -2,11 +2,10 @@ import 'package:app/constants.dart';
 import 'package:app/controllers/MenuAppController.dart';
 import 'package:app/provider/anak_provider.dart';
 import 'package:app/responsive.dart';
-import 'package:app/screens/dashboard/components/Statistik%20copy.dart';
 import 'package:app/screens/dashboard/components/Statistik_salah.dart';
 import 'package:app/screens/dashboard/components/Statistik_waktu.dart';
 import 'package:app/screens/dashboard/components/profil_anak.dart';
-import 'package:app/screens/main/components/side_menu.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:provider/provider.dart';
@@ -35,19 +34,14 @@ class DetailPage extends HookWidget {
 
     return Scaffold(
       key: context.read<MenuAppController>().scaffoldKey,
-      drawer: SideMenu(),
+     
       body: SingleChildScrollView(
         child: SafeArea(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // We want this side menu only for large screen
-              if (Responsive.isDesktop(context))
-                Expanded(
-                  // default flex = 1
-                  // and it takes 1/6 part of the screen
-                  child: SideMenu(),
-                ),
+             
               Expanded(
                 // It takes 5/6 part of the screen
                 flex: 5,
@@ -90,7 +84,7 @@ class DetailPage extends HookWidget {
                         },
                       ),
                       SizedBox(height: 25),
-                      Test(),
+               
                     ],
                   ),
                 ),

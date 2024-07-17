@@ -23,69 +23,73 @@ class StatistikWaktuAnakState extends State<StatistikWaktuAnak> {
     return int.parse(parts[0]) * 60 + int.parse(parts[1]);
   }
 
-  String formatSeconds(int seconds) {
-    final minutes = seconds ~/ 60;
-    final remainingSeconds = seconds % 60;
-    return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
+  String formatMinutes(double minutes) {
+    final intMinutes = minutes.toInt();
+    final seconds = ((minutes - intMinutes) * 60).round();
+    return '${intMinutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 
   @override
   Widget build(BuildContext context) {
     final gameStateProvider = Provider.of<GameStateProvider>(context);
     final List<Map<String, dynamic>> gameStates = gameStateProvider.gameStates;
-    print('All game states: $gameStates');
-    print('Child ID: ${widget.parsedChildId}');
 
     final filteredGameStates = gameStates
         .where((state) => state['id_anak'] == widget.parsedChildId)
         .toList();
-    print('Filtered game states: $filteredGameStates');
 
     final now = DateTime.now();
-    print('Current date: $now');
     final lastFiveDays =
         List<DateTime>.generate(5, (i) => now.subtract(Duration(days: i)));
-    print(
-        'Last Five Days: ${lastFiveDays.map((d) => DateFormat('yyyy-M-d').format(d)).join(', ')}');
 
-    final Map<String, int> fastestTimeByDate = {};
+    final Map<String, List<int>> timesByDate = {};
     for (final state in filteredGameStates) {
       final date = DateFormat('yyyy-M-d').parse(state['tanggal']);
-      print('Parsing date: ${state['tanggal']} -> $date');
       final dateString = DateFormat('yyyy-M-d').format(date);
       if (lastFiveDays
           .any((d) => DateFormat('yyyy-M-d').format(d) == dateString)) {
         final timeInSeconds = parseTimeToSeconds(state['waktu'] as String);
-        if (!fastestTimeByDate.containsKey(dateString) ||
-            timeInSeconds < fastestTimeByDate[dateString]!) {
-          fastestTimeByDate[dateString] = timeInSeconds;
+        if (!timesByDate.containsKey(dateString)) {
+          timesByDate[dateString] = [];
         }
+        timesByDate[dateString]!.add(timeInSeconds);
       }
     }
-    print('Fastest times by date: $fastestTimeByDate');
+
+    final Map<String, double> averageTimeByDate = {};
+    timesByDate.forEach((date, times) {
+      if (times.isNotEmpty) {
+        averageTimeByDate[date] = times.reduce((a, b) => a + b) / times.length;
+      }
+    });
 
     final List<BarChartGroupData> barGroups = [];
+    double maxMinutes = 0;
     for (final date in lastFiveDays) {
       final dateString = DateFormat('yyyy-M-d').format(date);
-      final dayOfWeek = DateFormat('EEEE').format(date);
-      final fastestTime = fastestTimeByDate[dateString]?.toDouble() ?? 0.0;
+      final averageTimeInSeconds = averageTimeByDate[dateString] ?? 0.0;
+      final averageTimeInMinutes = averageTimeInSeconds / 60;
 
-      print(
-          'Date: $dateString, Day: $dayOfWeek, Fastest Time: ${formatSeconds(fastestTime.toInt())}');
+      maxMinutes =
+          averageTimeInMinutes > maxMinutes ? averageTimeInMinutes : maxMinutes;
 
       barGroups.add(
         BarChartGroupData(
           x: lastFiveDays.indexOf(date),
           barRods: [
             BarChartRodData(
-              toY: fastestTime,
+              toY: averageTimeInMinutes,
               color: Colors.blue,
+              width: 22, // Adjust this value to change bar width
             ),
           ],
           showingTooltipIndicators: [0],
         ),
       );
     }
+
+    // Round up maxMinutes to the nearest 5
+    maxMinutes = (maxMinutes / 5).ceil() * 5.0;
 
     return Container(
       padding: EdgeInsets.all(defaultPadding),
@@ -97,7 +101,7 @@ class StatistikWaktuAnakState extends State<StatistikWaktuAnak> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "Fastest Times Last 5 Days",
+            "Average Times Last 5 Days",
             style: Theme.of(context).textTheme.titleMedium,
           ),
           SizedBox(
@@ -112,8 +116,9 @@ class StatistikWaktuAnakState extends State<StatistikWaktuAnak> {
                     sideTitles: SideTitles(
                       showTitles: true,
                       getTitlesWidget: (value, meta) {
-                        return Text(formatSeconds(value.toInt()));
+                        return Text(formatMinutes(value));
                       },
+                      reservedSize: 40,
                     ),
                   ),
                   bottomTitles: AxisTitles(
@@ -131,6 +136,29 @@ class StatistikWaktuAnakState extends State<StatistikWaktuAnak> {
                   ),
                 ),
                 borderData: FlBorderData(show: true),
+                maxY: maxMinutes,
+                minY: 0,
+                barTouchData: BarTouchData(
+                  enabled: false,
+                  touchTooltipData: BarTouchTooltipData(
+                    tooltipPadding: const EdgeInsets.all(0),
+                    tooltipMargin: 8,
+                    getTooltipItem: (
+                      BarChartGroupData group,
+                      int groupIndex,
+                      BarChartRodData rod,
+                      int rodIndex,
+                    ) {
+                      return BarTooltipItem(
+                        formatMinutes(rod.toY),
+                        const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      );
+                    },
+                  ),
+                ),
               ),
             ),
           ),

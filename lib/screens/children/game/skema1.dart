@@ -118,7 +118,7 @@ class _Skema1State extends State<Skema1> {
                   if (_currentIsiGambarList.isEmpty ||
                       _currentIndex >= _currentIsiGambarList.length) {
                     return Text(
-                      'No images found for the current level',
+                      '------------------------------',
                       style: TextStyle(color: Colors.white, fontSize: 20),
                     );
                   }
@@ -168,9 +168,9 @@ class _Skema1State extends State<Skema1> {
               File(images[0]),
               fit: BoxFit.contain,
               width: MediaQuery.of(context).size.width *
-                  0.4, // Use full width of the screen
+                  0.6, // Use full width of the screen
               height: MediaQuery.of(context).size.width *
-                  0.4, // Maintain aspect ratio
+                  0.6, // Maintain aspect ratio
             ),
           ),
         if (images.length > 1)

@@ -53,13 +53,15 @@ class _LevelPagetestState extends State<LevelPagetest> {
     final isiGambarProvider =
         Provider.of<IsiGambarProvider>(context, listen: false);
     isiGambarProvider.fetchIsiGambarList().then((_) {
-      _currentIsiGambarList = isiGambarProvider.getGambarByTema(widget.idTema);
-      if (_currentIsiGambarList.isNotEmpty) {
-        _currentIndex = 0;
-        _shuffledImagePaths = _shuffleImagePaths(_currentIndex);
-        _initPlayer();
-      }
-      setState(() {});
+      setState(() {
+        _currentIsiGambarList =
+            isiGambarProvider.getGambarByTema(widget.idTema);
+        if (_currentIsiGambarList.isNotEmpty) {
+          _currentIndex = 0;
+          _shuffledImagePaths = _shuffleImagePaths(_currentIndex);
+          _initPlayer();
+        }
+      });
     });
   }
 
@@ -89,11 +91,10 @@ class _LevelPagetestState extends State<LevelPagetest> {
       'waktu': time,
       'id_anak': anakId,
       'tanggal': date,
-      'poin': poin,
+      'poin': poin + 1,
       'skema': 1
     };
     _gameStateProvider.addGameState(gameState);
-    print('jumlah_salah: ${gameState['jumlah_salah']}');
   }
 
   void _navigateToLevel(int index) {
@@ -111,7 +112,7 @@ class _LevelPagetestState extends State<LevelPagetest> {
 
   void _completeLevel(int? anakId) {
     benar++;
-    print('angka poin = $poin');
+    player.play(AssetSource('sound/ceting.mp3'));
     if (benar == 2) {
       switch (_currentIsiGambarList[_currentIndex].tingkatKesulitan) {
         case 'mudah':
@@ -129,17 +130,33 @@ class _LevelPagetestState extends State<LevelPagetest> {
         AwesomeDialog(
           context: context,
           dialogType: DialogType.success,
-          animType: AnimType.rightSlide,
-          title: 'Congratulations!',
-          desc: 'You have completed the level.',
-          btnOkText: 'Next Level',
+          animType: AnimType.bottomSlide,
+          title: 'Hebat!',
+          desc: 'Kamu berhasil menyelesaikan puzzle ini!',
+          btnOkText: 'Lanjut',
+          btnOkColor: Colors.blue,
+          titleTextStyle: TextStyle(
+            color: Colors.blue[800],
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
+          ),
+          descTextStyle: TextStyle(
+            color: Colors.blue[600],
+            fontSize: 18,
+          ),
+          dialogBackgroundColor: Colors.lightBlue[50],
+          borderSide: BorderSide(color: Colors.blue, width: 2),
+          width: 400,
+          buttonsBorderRadius: BorderRadius.circular(20),
+          barrierColor: Colors.black45,
+          dismissOnTouchOutside: false,
+          headerAnimationLoop: false,
+          buttonsTextStyle: TextStyle(color: Colors.white, fontSize: 18),
+          showCloseIcon: false,
           btnOkOnPress: () {
             _navigateToLevel(_currentIndex + 1);
           },
-          btnOkColor: Colors.blueAccent,
-          titleTextStyle: TextStyle(color: Colors.black),
-          descTextStyle: TextStyle(color: Colors.black),
-        )..show();
+        ).show();
       }
     }
   }
@@ -150,23 +167,39 @@ class _LevelPagetestState extends State<LevelPagetest> {
     AwesomeDialog(
       context: context,
       dialogType: DialogType.success,
-      animType: AnimType.rightSlide,
-      title: 'Congratulations!',
-      desc: 'You have completed all levels!\nYour time: $finalTime',
-      btnOkText: 'Finish',
+      animType: AnimType.scale,
+      title: 'Selamat!',
+      desc:
+          'Kamu telah menyelesaikan semua level!\n\nWaktu kamu: ${_formatTime(_stopwatch.elapsed)}',
+      btnOkText: 'Selesai',
+      btnOkColor: Colors.blue,
+      titleTextStyle: TextStyle(
+        color: Colors.blue[800],
+        fontSize: 30,
+        fontWeight: FontWeight.bold,
+      ),
+      descTextStyle: TextStyle(
+        color: Colors.blue[600],
+        fontSize: 20,
+      ),
+      dialogBackgroundColor: Colors.lightBlue[50],
+      borderSide: BorderSide(color: Colors.blue, width: 3),
+      width: 420,
+      buttonsBorderRadius: BorderRadius.circular(20),
+      barrierColor: Colors.black54,
+      dismissOnTouchOutside: false,
+      headerAnimationLoop: false,
+      buttonsTextStyle: TextStyle(color: Colors.white, fontSize: 20),
+      showCloseIcon: false,
       btnOkOnPress: () {
-        Navigator.of(context).pop(); // Return to previous screen
+        Navigator.of(context).pop();
       },
-      btnOkColor: Colors.blueAccent,
-      titleTextStyle: TextStyle(color: Colors.black),
-      descTextStyle: TextStyle(color: Colors.black),
-    )..show();
+    ).show();
   }
 
   void _shakeWrongImage(GlobalKey<ShakeTransitionState> key) {
     setState(() {
       _wrongChoices++;
-      print('Wrong choices: $_wrongChoices');
     });
     player.play(AssetSource('sound/wrong.mp3'));
     key.currentState?.shake();
@@ -221,7 +254,7 @@ class _LevelPagetestState extends State<LevelPagetest> {
         feedback: Image.file(
           File(imagePath),
           fit: BoxFit.contain,
-          width: 150,
+          width: MediaQuery.of(context).size.height * 0.2,
           errorBuilder: (context, error, stackTrace) {
             return Icon(Icons.error, size: 150);
           },
@@ -306,6 +339,19 @@ class _LevelPagetestState extends State<LevelPagetest> {
   Widget build(BuildContext context) {
     final anakProvider = Provider.of<AnakProvider>(context);
     final currentAnak = anakProvider.currentAnak;
+
+    // Check if _currentIsiGambarList is empty
+    if (_currentIsiGambarList.isEmpty) {
+      return Scaffold(
+        backgroundColor: Colors.blue,
+        appBar: AppBar(
+          title: Text('Level ${widget.level}'),
+          backgroundColor: Colors.blue,
+        ),
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     final label = _currentIsiGambarList[_currentIndex].label;
 
     return Scaffold(
@@ -358,10 +404,11 @@ class _LevelPagetestState extends State<LevelPagetest> {
                       Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: Text(
-                          'Pilih Gambar Yang Sama!',
+                          'Pasangkan Gambar',
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 30,
+                            fontSize:
+                                MediaQuery.of(context).size.height * 0.033,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -390,7 +437,7 @@ class _LevelPagetestState extends State<LevelPagetest> {
                         ),
                       ],
                     ),
-                    height: MediaQuery.of(context).size.height * 0.3,
+                    height: MediaQuery.of(context).size.height * 0.4,
                     child: ShakeTransition(
                       key: _wrongImageKey1,
                       child: DragTarget<PuzzlePiece>(

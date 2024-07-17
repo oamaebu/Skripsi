@@ -90,7 +90,7 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3quiz> {
       'waktu': time,
       'id_anak': idAnak, // Set the child ID appropriately
       'tanggal': date,
-      'poin': poin,
+      'poin': poin+3,
       'skema': 3
     };
 
@@ -246,8 +246,27 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3quiz> {
     screenHeight = MediaQuery.of(context).size.height;
     final anakProvider = Provider.of<AnakProvider>(context);
     final currentAnak = anakProvider.currentAnak;
-    final label = _currentIsiGambarList[_currentIndex].label;
 
+    // Show loading indicator while data is being fetched
+    if (_currentIsiGambarList.isEmpty) {
+      return Scaffold(
+        backgroundColor: Colors.blue,
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+    // Check if fullImage is null (level is still loading)
+    if (fullImage == null) {
+      return Scaffold(
+        backgroundColor: Colors.blue,
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    final label = _currentIsiGambarList[_currentIndex].label;
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -316,52 +335,57 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3quiz> {
                   ),
                   Expanded(
                     flex: 12,
-                    child: AspectRatio(
-                      aspectRatio: fullImage!.width / fullImage!.height,
-                      child: Container(
-                        color: Color.fromARGB(255, 211, 209, 209),
-                        child: LayoutBuilder(
-                          builder: (context, constraints) {
-                            final scaleX =
-                                constraints.maxWidth / fullImage!.width;
-                            final scaleY =
-                                constraints.maxHeight / fullImage!.height;
-                            final scale = min(scaleX, scaleY);
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        AspectRatio(
+                          aspectRatio: fullImage!.width / fullImage!.height,
+                          child: Container(
+                            color: Color.fromARGB(255, 255, 255, 255),
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                final scaleX =
+                                    constraints.maxWidth / fullImage!.width;
+                                final scaleY =
+                                    constraints.maxHeight / fullImage!.height;
+                                final scale = min(scaleX, scaleY);
 
-                            return Stack(
-                              children: [
-                                CustomPaint(
-                                  size: Size(
-                                    fullImage!.width * scale,
-                                    fullImage!.height * scale,
-                                  ),
-                                  painter: TransparentBackgroundPainter(
-                                    fullImage!,
-                                    Rect.fromLTRB(
-                                      0,
-                                      0,
-                                      fullImage!.width.toDouble(),
-                                      fullImage!.height.toDouble(),
+                                return Stack(
+                                  children: [
+                                    CustomPaint(
+                                      size: Size(
+                                        fullImage!.width * scale,
+                                        fullImage!.height * scale,
+                                      ),
+                                      painter: TransparentBackgroundPainter(
+                                        fullImage!,
+                                        Rect.fromLTRB(
+                                          0,
+                                          0,
+                                          fullImage!.width.toDouble(),
+                                          fullImage!.height.toDouble(),
+                                        ),
+                                        0.3,
+                                      ),
                                     ),
-                                    0.3,
-                                  ),
-                                ),
-                                _buildGridLines(
-                                  scale,
-                                  fullImage!.width,
-                                  fullImage!.height,
-                                ),
-                                for (var piece in displayedPieces)
-                                  DraggablePiece(
-                                    piece: piece,
-                                    onPieceMoved: _onPieceMoved,
-                                    scale: scale,
-                                  ),
-                              ],
-                            );
-                          },
+                                    _buildGridLines(
+                                      scale,
+                                      fullImage!.width,
+                                      fullImage!.height,
+                                    ),
+                                    for (var piece in displayedPieces)
+                                      DraggablePiece(
+                                        piece: piece,
+                                        onPieceMoved: _onPieceMoved,
+                                        scale: scale,
+                                      ),
+                                  ],
+                                );
+                              },
+                            ),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
                   ),
                   Padding(
@@ -402,21 +426,32 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3quiz> {
                                 ),
                               ),
                               Flexible(
-                                  flex: 3,
-                                  child: ElevatedButton(
-                                      style: ButtonStyle(
-                                        backgroundColor:
-                                            MaterialStateProperty.all<Color>(
-                                                Colors.blue),
-                                      ),
-                                      onPressed:
-                                          pieces.isNotEmpty ? _addPiece : null,
-                                      child: Text(
-                                        'Main Sekarang',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                        ),
-                                      ))),
+                                flex: 3,
+                                child: ElevatedButton(
+                                  style: ButtonStyle(
+                                    backgroundColor:
+                                        MaterialStateProperty.all<Color>(
+                                            Colors.blue),
+                                    minimumSize:
+                                        MaterialStateProperty.all<Size>(Size(
+                                            double.infinity,
+                                            60)), // Set minimum button size
+                                    padding: MaterialStateProperty
+                                        .all<EdgeInsetsGeometry>(EdgeInsets.all(
+                                            16)), // Adjust padding for larger button
+                                  ),
+                                  onPressed:
+                                      pieces.isNotEmpty ? _addPiece : null,
+                                  child: Text(
+                                    'Main Sekarang',
+                                    style: TextStyle(
+                                      fontSize:
+                                          12, // Adjust font size for better visibility
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ),
                               Flexible(
                                 flex: 2,
                                 child: Container(
