@@ -24,6 +24,9 @@ class LevelPagetest extends StatefulWidget {
 }
 
 class _LevelPagetestState extends State<LevelPagetest> {
+  int BenarMudah = 0;
+  int BenarSedang = 0;
+  int BenarSulit = 0;
   int poin = 0;
   List<IsiGambar> _currentIsiGambarList = [];
   int _currentIndex = 0;
@@ -82,7 +85,7 @@ class _LevelPagetestState extends State<LevelPagetest> {
     super.dispose();
   }
 
-  void _saveGameState(String time, int anakId, int poin) {
+  void _saveGameState(String time, int anakId, int BenarMudah,int BenarSedang,int BenarSulit) {
     final now = DateTime.now();
     final date = '${now.year}-${now.month}-${now.day}';
 
@@ -91,7 +94,9 @@ class _LevelPagetestState extends State<LevelPagetest> {
       'waktu': time,
       'id_anak': anakId,
       'tanggal': date,
-      'poin': poin + 1,
+      'BenarMudah': BenarMudah,
+      'BenarSedang': BenarSedang,
+      'BenarSulit': BenarSulit,
       'skema': 1
     };
     _gameStateProvider.addGameState(gameState);
@@ -116,15 +121,15 @@ class _LevelPagetestState extends State<LevelPagetest> {
     if (benar == 2) {
       switch (_currentIsiGambarList[_currentIndex].tingkatKesulitan) {
         case 'mudah':
-          poin = poin + 1;
+          BenarMudah = BenarMudah + 1;
         case 'sedang':
-          poin = poin + 2;
+          BenarMudah = BenarSedang + 1;
         case 'sulit':
-          poin = poin + 3;
+          BenarSulit = BenarSulit + 1;
       }
       player.play(AssetSource('sound/correct.mp3'));
       if (_currentIndex == _currentIsiGambarList.length - 1) {
-        _saveGameState(_formatTime(_stopwatch.elapsed), anakId!, poin);
+        _saveGameState(_formatTime(_stopwatch.elapsed), anakId!, BenarMudah,BenarMudah,BenarSulit);
         _showCompletionDialog();
       } else {
         AwesomeDialog(
@@ -168,9 +173,9 @@ class _LevelPagetestState extends State<LevelPagetest> {
       context: context,
       dialogType: DialogType.success,
       animType: AnimType.scale,
-      title: 'Selamat!',
+      title: 'Hebat!',
       desc:
-          'Kamu telah menyelesaikan semua level!\n\nWaktu kamu: ${_formatTime(_stopwatch.elapsed)}',
+          'Kamu telah menyelesaikan semua level!',
       btnOkText: 'Selesai',
       btnOkColor: Colors.blue,
       titleTextStyle: TextStyle(
@@ -325,8 +330,8 @@ class _LevelPagetestState extends State<LevelPagetest> {
         context: context,
         dialogType: DialogType.info,
         animType: AnimType.rightSlide,
-        title: 'Time\'s Up!',
-        desc: 'You\'ve reached the 5-minute time limit.',
+        title: 'Waktu Habis!',
+        desc: 'Kamu hebat! kerja yang bagus',
         btnOkText: 'OK',
         btnOkOnPress: () {
           Navigator.of(context).pop();

@@ -1,4 +1,5 @@
 import 'package:app/constants.dart';
+import 'package:app/models/skema.dart';
 import 'package:app/provider/game_state_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -7,10 +8,13 @@ import 'package:intl/intl.dart';
 
 class StatistikSalahAnak extends StatefulWidget {
   final String childId;
+  final int skema;
   late final int parsedChildId;
 
-  StatistikSalahAnak({Key? key, required this.childId}) : super(key: key) {
+  StatistikSalahAnak({Key? key, required this.childId, required this.skema})
+      : super(key: key) {
     parsedChildId = int.tryParse(childId) ?? 0;
+    print('Parsed Child ID: $parsedChildId');
   }
 
   @override
@@ -18,71 +22,112 @@ class StatistikSalahAnak extends StatefulWidget {
 }
 
 class StatistikSalahAnakState extends State<StatistikSalahAnak> {
+  int currentStartIndex = 0;
+  static const int daysToShow = 5;
+
+
   @override
   Widget build(BuildContext context) {
     final gameStateProvider = Provider.of<GameStateProvider>(context);
     final List<Map<String, dynamic>> gameStates = gameStateProvider.gameStates;
-    print('All game states: $gameStates');
-    print('Child ID: ${widget.parsedChildId}');
+    
+
+     int skema = widget.skema;
 
     final filteredGameStates = gameStates
-        .where((state) => state['id_anak'] == widget.parsedChildId)
+        .where((state) =>
+            state['id_anak'] == widget.parsedChildId &&
+            state['skema'] == widget.skema)
         .toList();
+
     print('Filtered game states: $filteredGameStates');
 
-    final now = DateTime.now();
-    print('Current date: $now');
-    final lastFiveDays =
-        List<DateTime>.generate(5, (i) => now.subtract(Duration(days: i)));
-    print(
-        'Last Five Days: ${lastFiveDays.map((d) => DateFormat('yyyy-M-d').format(d)).join(', ')}');
-
-    final Map<String, double> averagePointsByDate = {};
-    final Map<String, int> pointsCountByDate = {};
-    for (final state in filteredGameStates) {
-      final date = DateFormat('yyyy-M-d').parse(state['tanggal']);
-      print('Parsing date: ${state['tanggal']} -> $date');
-      final dateString = DateFormat('yyyy-M-d').format(date);
-      if (lastFiveDays
-          .any((d) => DateFormat('yyyy-M-d').format(d) == dateString)) {
-        final points = state['poin'] as int;
-        if (!averagePointsByDate.containsKey(dateString)) {
-          averagePointsByDate[dateString] = 0;
-          pointsCountByDate[dateString] = 0;
-        }
-        averagePointsByDate[dateString] =
-            averagePointsByDate[dateString]! + points;
-        pointsCountByDate[dateString] = pointsCountByDate[dateString]! + 1;
-      }
-    }
-
-    for (final dateString in averagePointsByDate.keys.toList()) {
-      averagePointsByDate[dateString] =
-          (averagePointsByDate[dateString]! / pointsCountByDate[dateString]!)
-              .roundToDouble();
-    }
-
-    final List<BarChartGroupData> barGroups = [];
-    for (final date in lastFiveDays) {
-      final dateString = DateFormat('yyyy-M-d').format(date);
-      final dayOfWeek = DateFormat('E').format(date);
-      final averagePoints = averagePointsByDate[dateString]?.toDouble() ?? 0.0;
-
-      barGroups.add(
-        BarChartGroupData(
-          x: lastFiveDays.indexOf(date),
-          barRods: [
-            BarChartRodData(
-              toY: averagePoints,
-              color: Colors.blue,
-              width: 16,
-              borderRadius: BorderRadius.circular(4),
-            ),
-          ],
-          showingTooltipIndicators: [0],
+    if (filteredGameStates.isEmpty) {
+      return Container(
+        padding: EdgeInsets.all(defaultPadding),
+        decoration: BoxDecoration(
+          color: secondaryColor,
+          borderRadius: const BorderRadius.all(Radius.circular(10)),
+        ),
+        child: Center(
+          child: Text(
+            "No data available",
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium
+                ?.copyWith(color: Colors.white),
+          ),
         ),
       );
     }
+
+    // Group data by date
+    Map<DateTime, Map<String, int>> groupedData = {};
+    for (final state in filteredGameStates) {
+      final date = DateFormat('yyyy-MM-dd').parse(state['tanggal'] as String);
+      final dateKey = DateTime(date.year, date.month, date.day);
+
+      if (!groupedData.containsKey(dateKey)) {
+        groupedData[dateKey] = {'mudah': 0, 'sedang': 0, 'sulit': 0};
+      }
+
+      groupedData[dateKey]!['mudah'] = (groupedData[dateKey]!['mudah'] ?? 0) +
+          (state['BenarMudah'] as int? ?? 0);
+      groupedData[dateKey]!['sedang'] = (groupedData[dateKey]!['sedang'] ?? 0) +
+          (state['BenarSedang'] as int? ?? 0);
+      groupedData[dateKey]!['sulit'] = (groupedData[dateKey]!['sulit'] ?? 0) +
+          (state['BenarSulit'] as int? ?? 0);
+    }
+
+    // Sort dates
+    final sortedDates = groupedData.keys.toList()
+      ..sort((a, b) => b.compareTo(a));
+
+    // Calculate the range of dates to show
+    final int endIndex = currentStartIndex + daysToShow;
+    final datesToShow = sortedDates.sublist(
+      currentStartIndex,
+      endIndex > sortedDates.length ? sortedDates.length : endIndex,
+    );
+
+    // Create bar groups
+    final List<BarChartGroupData> barGroups =
+        datesToShow.asMap().entries.map((entry) {
+      final index = entry.key;
+      final date = entry.value;
+      final data = groupedData[date]!;
+
+      return BarChartGroupData(
+        x: index,
+        barRods: [
+          BarChartRodData(
+            toY: data['mudah']!.toDouble(),
+            color: Colors.green,
+            width: 16,
+            borderRadius: BorderRadius.circular(4),
+          ),
+          BarChartRodData(
+            toY: data['sedang']!.toDouble(),
+            color: Colors.yellow,
+            width: 16,
+            borderRadius: BorderRadius.circular(4),
+          ),
+          BarChartRodData(
+            toY: data['sulit']!.toDouble(),
+            color: Colors.red,
+            width: 16,
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ],
+        showingTooltipIndicators: [0, 1, 2],
+      );
+    }).toList();
+
+    // Calculate max Y value
+    final maxY = groupedData.values
+        .map((data) => data['mudah']! + data['sedang']! + data['sulit']!)
+        .reduce((a, b) => a > b ? a : b)
+        .toDouble();
 
     return Container(
       padding: EdgeInsets.all(defaultPadding),
@@ -93,94 +138,169 @@ class StatistikSalahAnakState extends State<StatistikSalahAnak> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+        
           Text(
-            "Average Points Last 5 Days",
+            "Total Jawaban Benar Skema $skema",
             style: Theme.of(context).textTheme.titleMedium,
           ),
           SizedBox(height: 20),
-          AspectRatio(
-            aspectRatio: 1.7,
-            child: BarChart(
-              BarChartData(
-                alignment: BarChartAlignment.spaceAround,
-                barGroups: barGroups,
-                maxY: 6, // Set a fixed maximum Y value
-                minY: 0, // Set a fixed minimum Y value
-                gridData: FlGridData(
-                  show: true,
-                  drawVerticalLine: false,
-                  horizontalInterval: 1,
-                  getDrawingHorizontalLine: (value) {
-                    return FlLine(
-                      color: Colors.white.withOpacity(0.1),
-                      strokeWidth: 1,
-                    );
-                  },
-                ),
-                titlesData: FlTitlesData(
-                  show: true,
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 30,
-                      getTitlesWidget: (value, meta) {
-                        final index = value.toInt();
-                        if (index < 0 || index >= lastFiveDays.length) {
-                          return Text('');
-                        }
-                        final date = lastFiveDays[index];
-                        return Text(
-                          DateFormat('E').format(date),
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
-                        );
-                      },
+          if (barGroups.isNotEmpty)
+            AspectRatio(
+              aspectRatio: 1.7,
+              child: BarChart(
+                BarChartData(
+                  alignment: BarChartAlignment.spaceAround,
+                  barGroups: barGroups,
+                  maxY: maxY,
+                  titlesData: FlTitlesData(
+                    show: true,
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (value, meta) {
+                          if (value.toInt() >= 0 &&
+                              value.toInt() < datesToShow.length) {
+                            return Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Text(
+                                DateFormat('dd/MM')
+                                    .format(datesToShow[value.toInt()]),
+                                style: TextStyle(
+                                    color: Colors.white, fontSize: 10),
+                              ),
+                            );
+                          }
+                          return SizedBox.shrink();
+                        },
+                        reservedSize: 40,
+                      ),
                     ),
-                  ),
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 40,
-                      interval: 1,
-                      getTitlesWidget: (value, meta) {
-                        return Text(
-                          value.toInt().toString(),
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
-                        );
-                      },
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 30,
+                        getTitlesWidget: (value, meta) {
+                          return Text(
+                            value.toInt().toString(),
+                            style: TextStyle(color: Colors.white, fontSize: 10),
+                          );
+                        },
+                      ),
                     ),
+                    topTitles:
+                        AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    rightTitles:
+                        AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   ),
-                  topTitles:
-                      AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles:
-                      AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                ),
-                borderData: FlBorderData(show: false),
-                barTouchData: BarTouchData(
-                  touchTooltipData: BarTouchTooltipData(
-                    getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                      return BarTooltipItem(
-                        rod.toY.toStringAsFixed(1),
-                        TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
+                  gridData: FlGridData(
+                    show: true,
+                    drawHorizontalLine: true,
+                    horizontalInterval:
+                        maxY / 5, // Adjust this value to change grid density
+                    getDrawingHorizontalLine: (value) {
+                      return FlLine(
+                        color: Colors.white.withOpacity(0.2),
+                        strokeWidth: 1,
+                        dashArray: [5, 5],
                       );
                     },
+                    drawVerticalLine: false,
+                  ),
+                  borderData: FlBorderData(
+                    show: true,
+                    border: Border(
+                      left: BorderSide(color: Colors.white.withOpacity(0.5)),
+                      bottom: BorderSide(color: Colors.white.withOpacity(0.5)),
+                    ),
+                  ),
+                  barTouchData: BarTouchData(
+                    touchTooltipData: BarTouchTooltipData(
+                      getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                        String kategori;
+                        switch (rodIndex) {
+                          case 0:
+                            kategori = 'M';
+                            break;
+                          case 1:
+                            kategori = 'S';
+                            break;
+                          case 2:
+                            kategori = 'L';
+                            break;
+                          default:
+                            kategori = '';
+                        }
+                        return BarTooltipItem(
+                          '$kategori:${rod.toY.toInt()}',
+                          const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 10,
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ),
               ),
             ),
+          SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildLegendItem('Mudah (M)', Colors.green),
+              SizedBox(width: 20),
+              _buildLegendItem('Sedang (S)', Colors.yellow),
+              SizedBox(width: 20),
+              _buildLegendItem('Sulit (L)', Colors.red),
+            ],
+          ),
+          SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ElevatedButton(
+                onPressed: currentStartIndex > 0
+                    ? () {
+                        setState(() {
+                          currentStartIndex -= daysToShow;
+                          if (currentStartIndex < 0) currentStartIndex = 0;
+                        });
+                      }
+                    : null,
+                child: Text('Previous'),
+              ),
+              SizedBox(width: 20),
+              ElevatedButton(
+                onPressed: endIndex < sortedDates.length
+                    ? () {
+                        setState(() {
+                          currentStartIndex += daysToShow;
+                          if (currentStartIndex >= sortedDates.length)
+                            currentStartIndex = sortedDates.length - daysToShow;
+                        });
+                      }
+                    : null,
+                child: Text('Next'),
+              ),
+            ],
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildLegendItem(String label, Color color) {
+    return Row(
+      children: [
+        Container(
+          width: 16,
+          height: 16,
+          color: color,
+        ),
+        SizedBox(width: 4),
+        Text(label, style: TextStyle(color: Colors.white, fontSize: 12)),
+      ],
     );
   }
 }

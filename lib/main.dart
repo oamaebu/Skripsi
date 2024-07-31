@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import 'auth/login_or_register.dart';
 import 'constants.dart';
 import 'controllers/MenuAppController.dart';
 
@@ -16,13 +15,11 @@ import 'provider/game_state_provider.dart';
 import 'provider/puzzle_provider.dart';
 import 'provider/skema_provider.dart';
 import 'screens/SignUp.dart';
-import 'screens/children/game/game.dart';
+
 import 'screens/dashboard/components/List_Anak.dart';
 import 'screens/main/buat_profil_anak.dart';
 import 'screens/main/main_screen.dart';
 import 'screens/login.dart';
-import 'screens/children/homepage.dart';
-import 'screens/children/game/skema1quiz.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

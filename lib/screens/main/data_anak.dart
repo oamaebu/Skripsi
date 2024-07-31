@@ -1,7 +1,9 @@
 import 'package:app/constants.dart';
 import 'package:app/controllers/MenuAppController.dart';
 import 'package:app/provider/anak_provider.dart';
+import 'package:app/provider/game_state_provider.dart';
 import 'package:app/responsive.dart';
+import 'package:app/screens/dashboard/components/Statistik%20copy.dart';
 import 'package:app/screens/dashboard/components/Statistik_salah.dart';
 import 'package:app/screens/dashboard/components/Statistik_waktu.dart';
 import 'package:app/screens/dashboard/components/profil_anak.dart';
@@ -19,29 +21,19 @@ class DetailPage extends HookWidget {
   Widget build(BuildContext context) {
     final anakProvider = Provider.of<AnakProvider>(context);
     final currentAnak = anakProvider.currentAnak;
+    
+
     final ValueNotifier<String> selectedStatistik = useState('waktu');
-
-    // Fetch child's data by ID
-    void fetchChildData() {
-      anakProvider.fetchAnakById(childId);
-    }
-
-    // Fetch child's data when the widget is first built
-    useEffect(() {
-      fetchChildData();
-      return () {}; // Clean-up function
-    }, []);
 
     return Scaffold(
       key: context.read<MenuAppController>().scaffoldKey,
-     
       body: SingleChildScrollView(
         child: SafeArea(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // We want this side menu only for large screen
-             
+
               Expanded(
                 // It takes 5/6 part of the screen
                 flex: 5,
@@ -53,38 +45,14 @@ class DetailPage extends HookWidget {
                       SizedBox(height: 10),
                       profilAnak(),
                       SizedBox(height: 25),
-                      DropdownButton<String>(
-                        value: selectedStatistik.value,
-                        onChanged: (String? newValue) {
-                          if (newValue != null) {
-                            selectedStatistik.value = newValue;
-                          }
-                        },
-                        items: [
-                          DropdownMenuItem(
-                            value: 'waktu',
-                            child: Text('Statistik Waktu'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'salah',
-                            child: Text('Statistik Salah'),
-                          ),
-                        ],
-                      ),
                       SizedBox(height: 25),
-                      ValueListenableBuilder<String>(
-                        valueListenable: selectedStatistik,
-                        builder: (context, value, child) {
-                          if (value == 'waktu') {
-                            return StatistikWaktuAnak(childId: childId.toString());
-                          } else {
-                            return StatistikSalahAnak(
-                                childId: childId.toString());
-                          }
-                        },
-                      ),
+                      Test(),
                       SizedBox(height: 25),
-               
+                      StatistikSalahAnak(childId: childId.toString(), skema: 1),
+                      SizedBox(height: 25),
+                      StatistikSalahAnak(childId: childId.toString(), skema: 2),
+                      SizedBox(height: 25),
+                      StatistikSalahAnak(childId: childId.toString(), skema: 3),
                     ],
                   ),
                 ),

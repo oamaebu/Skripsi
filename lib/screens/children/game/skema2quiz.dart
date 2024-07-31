@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 import 'package:app/provider/anak_provider.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:app/models/isi_gambar.dart';
@@ -21,6 +22,9 @@ class GridPageQuiz extends StatefulWidget {
 
 class _GridPageState extends State<GridPageQuiz>
     with SingleTickerProviderStateMixin {
+  late AudioPlayer _player;
+  bool _isPlayerInitialized = false;
+  late String suara = '';
   List<String> _images = [];
   List<String> _correctImages = [];
   int grid = 6;
@@ -32,6 +36,10 @@ class _GridPageState extends State<GridPageQuiz>
     'assets/images/maskot.png'
   ];
   late String label = '';
+  late String kesulitan = '';
+  int BenarMudah = 0;
+  int BenarSedang = 0;
+  int BenarSulit = 0;
   List<bool> _clicked = List.generate(6, (index) => false);
   List<IsiGambar> allImages = [];
   int currentLevel = 1;
@@ -39,7 +47,7 @@ class _GridPageState extends State<GridPageQuiz>
   late AnimationController _animationController;
   List<bool> _showRedMark = List.generate(6, (index) => false);
   final AudioPlayer _audioPlayer = AudioPlayer();
-
+  final player = AudioPlayer();
   Timer? _timer;
   int _remainingTime = 300; // 5 minutes in seconds
 
@@ -48,6 +56,8 @@ class _GridPageState extends State<GridPageQuiz>
   @override
   void initState() {
     super.initState();
+    _player = AudioPlayer();
+    _initPlayer();
     _fetchImages();
     _animationController = AnimationController(
       vsync: this,
@@ -57,10 +67,22 @@ class _GridPageState extends State<GridPageQuiz>
     _gameStateProvider = Provider.of<GameStateProvider>(context, listen: false);
   }
 
+  Future<void> _initPlayer() async {
+    if (suara.isNotEmpty) {
+      await _player.play(DeviceFileSource(suara));
+      setState(() {
+        _isPlayerInitialized = true;
+      });
+    } else {
+      print('Error: Sound file path is empty.');
+    }
+  }
+
   @override
   void dispose() {
     _animationController.dispose();
     _audioPlayer.dispose();
+    _player.dispose();
     _timer?.cancel();
     super.dispose();
   }
@@ -103,7 +125,9 @@ class _GridPageState extends State<GridPageQuiz>
       'waktu': _formatTime(_remainingTime),
       'id_anak': currentAnak?.id ?? 0, // Use the current anak's ID
       'tanggal': date,
-      'poin': totalPoin+2,
+       'BenarMudah': BenarMudah,
+      'BenarSedang': BenarSedang,
+      'BenarSulit': BenarSulit,
       'skema': 2
     };
     _gameStateProvider.addGameState(gameState);
@@ -134,19 +158,28 @@ class _GridPageState extends State<GridPageQuiz>
     _saveGameState(); // Save game state even when time is up
     AwesomeDialog(
       context: context,
-      dialogType: DialogType.error,
-      animType: AnimType.scale,
-      title: 'Time\'s Up!',
-      desc: 'You have run out of time.',
-      btnOkText: 'Try Again',
+      dialogType: DialogType.info,
+      animType: AnimType.rightSlide,
+      title: 'Waktu Habis!',
+      desc: 'Kamu hebat! kerja yang bagus',
+      btnOkText: 'OK',
       btnOkOnPress: () {
-        _resetLevel();
+        Navigator.of(context).pop();
       },
     )..show();
   }
 
   void _showLevelCompletionDialog() {
-    _saveGameState(); // Save game state after completing a level
+    player.play(AssetSource('sound/correct.mp3'));
+    switch (kesulitan) {
+      case 'mudah':
+        BenarMudah = BenarMudah + 1;
+      case 'sedang':
+        BenarSedang = BenarSedang + 1;
+      case 'sulit':
+        BenarSulit = BenarSulit + 1;
+    }
+ 
     AwesomeDialog(
       context: context,
       dialogType: DialogType.success,
@@ -274,16 +307,19 @@ class _GridPageState extends State<GridPageQuiz>
         allImages[index].gambar3,
       ];
       label = allImages[index].label;
+      kesulitan = allImages[index].tingkatKesulitan;
+      suara = allImages[index].suara ?? '';
     } else {
       // If no unique images available for this level, use default images and label
       _correctImages = defaultImages.take(3).toList();
-      label = 'Default Label for Level $currentLevel';
+      label = 'Kucing ';
+      kesulitan = 'mudah';
     }
 
     // Initialize clicked and showRedMark lists
     _clicked = List.generate(_images.length, (index) => false);
     _showRedMark = List.generate(_images.length, (index) => false);
-
+    _initPlayer();
     // Trigger UI update
     setState(() {});
   }
@@ -348,23 +384,7 @@ class _GridPageState extends State<GridPageQuiz>
 
     return Scaffold(
       appBar: AppBar(
-        actions: [
-          Container(
-            alignment: AlignmentDirectional.topEnd,
-            padding: EdgeInsets.all(8.0),
-            child: GestureDetector(
-              onTap: () {
-                // Handle sound icon tap
-                print('Sound icon tapped');
-              },
-              child: Icon(
-                Icons.volume_up,
-                size: 36.0,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ],
+        actions: [],
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -397,27 +417,51 @@ class _GridPageState extends State<GridPageQuiz>
           ),
         ),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Column(
-              children: [
-                Text(
-                  'Pilih Gambar',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: MediaQuery.of(context).size.width * 0.05,
-                    fontWeight: FontWeight.bold,
+            Container(
+              alignment: Alignment.topRight,
+              child: IconButton(
+                icon: Icon(
+                  Icons.volume_up,
+                  size: MediaQuery.of(context).size.width * 0.12,
+                  color: const Color.fromARGB(255, 255, 255, 255),
+                ),
+                onPressed: () {
+                  // Handle sound icon tap
+                  if (_isPlayerInitialized) {
+                    _initPlayer();
+                    print('Sound icon tapped');
+                  }
+                },
+              ),
+            ),
+            Center(
+              child: Expanded(
+                flex: 3,
+                child: Center(
+                  child: Column(
+                    children: [
+                      Text(
+                        'Pilih Gambar',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: MediaQuery.of(context).size.width * 0.05,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        label,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: MediaQuery.of(context).size.width * 0.1,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: MediaQuery.of(context).size.width * 0.1,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
+              ),
             ),
             Container(
               color: Colors.white,
@@ -474,6 +518,7 @@ class _GridPageState extends State<GridPageQuiz>
                       ),
               ),
             ),
+            SizedBox(),
           ],
         ),
       ),

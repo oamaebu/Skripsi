@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
@@ -139,7 +140,13 @@ class _Skema1State extends State<Skema1> {
                           ),
                         ),
                       ),
-                      _buildImages(isiGambar),
+                      GestureDetector(
+                          onTap: () {
+                            if (_isPlayerInitialized) {
+                              _initPlayer();
+                            }
+                          },
+                          child: _buildImages(isiGambar)),
                       SizedBox(height: 20),
                       _buildNavigationButtons(),
                     ],

@@ -1,4 +1,5 @@
 import 'dart:io' as io;
+import 'dart:io';
 import 'package:app/models/isi_gambar.dart';
 import 'package:app/provider/anak_provider.dart';
 import 'package:app/provider/gambar_provider.dart';
@@ -24,7 +25,10 @@ class JigsawPuzzleScreenSkema3quiz extends StatefulWidget {
 
 class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3quiz> {
   bool _isTimeUp = false;
-  int point = 0;
+  String imagePath = '';
+  int BenarMudah = 0;
+  int BenarSedang = 0;
+  int BenarSulit = 0;
   late Stopwatch _stopwatch;
   late GameStateProvider _gameStateProvider;
   bool isPreviousPiecePlaced = true;
@@ -71,8 +75,8 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3quiz> {
         context: context,
         dialogType: DialogType.info,
         animType: AnimType.rightSlide,
-        title: 'Time\'s Up!',
-        desc: 'You\'ve reached the 5-minute time limit.',
+        title: 'Waktu Habis!',
+        desc: 'Kamu hebat! kerja yang bagus',
         btnOkText: 'OK',
         btnOkOnPress: () {
           Navigator.of(context).pop();
@@ -81,7 +85,8 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3quiz> {
     }
   }
 
-  void _saveGameState(String time, int idAnak, int poin) {
+  void _saveGameState(String time, int idAnak, int BenarMudah, int BenarSedang,
+      int BenarSulit) {
     final now = DateTime.now();
     final date = '${now.year}-${now.month}-${now.day}';
 
@@ -90,7 +95,9 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3quiz> {
       'waktu': time,
       'id_anak': idAnak, // Set the child ID appropriately
       'tanggal': date,
-      'poin': poin+3,
+      'BenarMudah': BenarMudah,
+      'BenarSedang': BenarSedang,
+      'BenarSulit': BenarSulit,
       'skema': 3
     };
 
@@ -108,7 +115,8 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3quiz> {
   void _completeLevel(int idAnak) {
     _player.play(AssetSource('sound/correct.mp3'));
     final idGambar = _currentIsiGambarList[_currentIndex].id;
-    _saveGameState(_formatTime(_stopwatch.elapsed), idAnak, point);
+    _saveGameState(_formatTime(_stopwatch.elapsed), idAnak, BenarMudah,
+        BenarSedang, BenarSulit);
   }
 
   Future<void> _initPlayer() async {
@@ -135,7 +143,7 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3quiz> {
     if (_currentIsiGambarList.isNotEmpty &&
         _currentIndex >= 0 &&
         _currentIndex < _currentIsiGambarList.length) {
-      String imagePath = getStatusSkemaValue();
+      imagePath = getStatusSkemaValue();
       _loadImage1(imagePath).then((image) {
         setState(() {
           fullImage = image;
@@ -231,7 +239,16 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3quiz> {
           ),
           correctPosition: Offset(j * pieceWidth, i * pieceHeight),
           size: Size(pieceWidth, pieceHeight),
-          onLocked: _addPiece,
+          onLocked: () {
+            // Add a 1-second delay before calling _addPiece
+            Future.delayed(Duration(seconds: 2), () {
+              if (mounted) {
+                setState(() {
+                  _addPiece();
+                });
+              }
+            });
+          },
         ));
       }
     }
@@ -299,7 +316,10 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3quiz> {
                                 0.1, // 20% of the screen height
                             width: MediaQuery.of(context).size.width *
                                 0.1, // 20% of the screen width
-                            child: _buildNextPiecePreview(),
+                            child: Image.file(
+                              File(imagePath),
+                              fit: BoxFit.contain,
+                            ),
                           ),
                         ),
                         Expanded(
@@ -402,80 +422,121 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3quiz> {
                     flex: 3,
                     child: Container(
                       color: Colors.lightBlueAccent,
-                      child: Padding(
-                        padding: const EdgeInsets.all(20.0),
-                        child: Container(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              Flexible(
-                                flex: 2,
-                                child: Container(
-                                  width: MediaQuery.of(context).size.width *
-                                      0.2, // 20% of the screen width
-                                  child: IconButton(
-                                    icon: Icon(
-                                      Icons.refresh,
-                                      color: Colors.white,
-                                      size: MediaQuery.of(context).size.width *
-                                          0.08, // Adjust icon size based on screen width
-                                    ),
-                                    onPressed: _resetPuzzle,
-                                    tooltip: 'Ulang',
+                      child: Container(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            Flexible(
+                              flex: 2,
+                              child: Container(
+                                width: MediaQuery.of(context).size.width *
+                                    0.15, // 15% of the screen width
+                                height: MediaQuery.of(context).size.width *
+                                    0.15, // Ensure the container is square
+                                decoration: BoxDecoration(
+                                  color: Colors.blue,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    width: 2,
+                                    color: Colors.white,
                                   ),
                                 ),
-                              ),
-                              Flexible(
-                                flex: 3,
-                                child: ElevatedButton(
-                                  style: ButtonStyle(
-                                    backgroundColor:
-                                        MaterialStateProperty.all<Color>(
-                                            Colors.blue),
-                                    minimumSize:
-                                        MaterialStateProperty.all<Size>(Size(
-                                            double.infinity,
-                                            60)), // Set minimum button size
-                                    padding: MaterialStateProperty
-                                        .all<EdgeInsetsGeometry>(EdgeInsets.all(
-                                            16)), // Adjust padding for larger button
-                                  ),
-                                  onPressed:
-                                      pieces.isNotEmpty ? _addPiece : null,
-                                  child: Text(
-                                    'Main Sekarang',
-                                    style: TextStyle(
-                                      fontSize:
-                                          12, // Adjust font size for better visibility
-                                      color: Colors.white,
+                                child: Center(
+                                  child: Container(
+                                    width: MediaQuery.of(context).size.width *
+                                        0.12, // Adjust inner container width
+                                    height: MediaQuery.of(context).size.width *
+                                        0.12, // Adjust inner container height
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: IconButton(
+                                      icon: Icon(
+                                        Icons.refresh,
+                                        color: Colors.white,
+                                        size: MediaQuery.of(context)
+                                                .size
+                                                .width *
+                                            0.08, // Adjust icon size based on screen width
+                                      ),
+                                      onPressed: _resetPuzzle,
+                                      tooltip: 'Ulang',
                                     ),
                                   ),
                                 ),
                               ),
-                              Flexible(
-                                flex: 2,
-                                child: Container(
-                                  width: MediaQuery.of(context).size.width *
-                                      0.2, // 20% of the screen width
-                                  child: IconButton(
-                                    icon: Icon(
-                                      Icons.check,
-                                      color: Colors.white,
-                                      size: MediaQuery.of(context).size.width *
-                                          0.08, // Adjust icon size based on screen width
-                                    ),
-                                    onPressed: () =>
-                                        _checkCompletion1(currentAnak?.id ?? 0),
-                                    tooltip: 'Selesai',
+                            ),
+                            Flexible(
+                              flex: 3,
+                              child: ElevatedButton(
+                                style: ButtonStyle(
+                                  backgroundColor:
+                                      MaterialStateProperty.all<Color>(
+                                          Colors.blue),
+                                  minimumSize: MaterialStateProperty.all<Size>(
+                                      Size(double.infinity,
+                                          60)), // Set minimum button size
+                                  padding: MaterialStateProperty
+                                      .all<EdgeInsetsGeometry>(EdgeInsets.all(
+                                          16)), // Adjust padding for larger button
+                                ),
+                                onPressed: pieces.isNotEmpty ? _addPiece : null,
+                                child: Text(
+                                  'Main Sekarang',
+                                  style: TextStyle(
+                                    fontSize:
+                                        14, // Adjust font size for better visibility
+                                    color: Colors.white,
                                   ),
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                            Flexible(
+                              flex: 2,
+                              child: Container(
+                                width: MediaQuery.of(context).size.width *
+                                    0.15, // 20% of the screen width
+                                height: MediaQuery.of(context).size.width *
+                                    0.15, // Ensure the container is square
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.blue,
+                                ),
+                                child: Center(
+                                  child: Container(
+                                    width: MediaQuery.of(context).size.width *
+                                        0.18, // Adjust inner container width
+                                    height: MediaQuery.of(context).size.width *
+                                        0.18, // Adjust inner container height
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        width: 2,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    child: IconButton(
+                                      icon: Icon(
+                                        Icons.check,
+                                        color: Colors.white,
+                                        size: MediaQuery.of(context)
+                                                .size
+                                                .width *
+                                            0.08, // Adjust icon size based on screen width
+                                      ),
+                                      onPressed: () => _checkCompletion1(
+                                          currentAnak?.id ?? 0),
+                                      tooltip: 'Selesai',
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                  )
+                  ),
                 ],
               ),
             ),
@@ -564,8 +625,6 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3quiz> {
   void _checkCompletion1(int idAnak) {
     bool allCorrect = true;
     int angka = _currentIsiGambarList.length;
-    bool sas = _currentIndex == _currentIsiGambarList.length - 1;
-    print(sas);
 
     // Check if all pieces are placed correctly
     for (var piece in displayedPieces) {
@@ -580,11 +639,11 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3quiz> {
       if (allCorrect) {
         switch (_currentIsiGambarList[_currentIndex].tingkatKesulitan) {
           case 'mudah':
-            point = point + 1;
+            BenarMudah = BenarMudah + 1;
           case 'sedang':
-            point = point + 2;
+            BenarSedang = BenarSedang + 1;
           case 'sulit':
-            point = point + 3;
+            BenarSulit = BenarSulit + 1;
         }
         if (_currentIndex == _currentIsiGambarList.length - 1) {
           _stopwatch.stop();
@@ -622,6 +681,7 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3quiz> {
           ).show();
           _completeLevel(idAnak);
         } else {
+          _player.play(AssetSource('sound/correct.mp3'));
           AwesomeDialog(
             context: context,
             dialogType: DialogType.success,
@@ -759,8 +819,10 @@ class _JigsawPuzzleScreenState extends State<JigsawPuzzleScreenSkema3quiz> {
 
   void _resetPuzzle() {
     setState(() {
+      // Update the imagePath
+      imagePath = getStatusSkemaValue();
+
       // Reset the puzzle pieces for the current level
-      String imagePath = getStatusSkemaValue();
       _loadImage1(imagePath).then((image) {
         setState(() {
           fullImage = image;
@@ -891,7 +953,7 @@ class _DraggablePieceState extends State<DraggablePiece> {
                 final distance = Offset(
                         left - potentialPosition.dx, top - potentialPosition.dy)
                     .distance;
-                final snapThreshold = 10.0;
+                final snapThreshold = 22.0;
 
                 if (distance < snapThreshold) {
                   top = potentialPosition.dy;

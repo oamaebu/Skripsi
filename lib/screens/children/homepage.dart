@@ -35,7 +35,7 @@ class _HomePageState extends State<HomePage> {
     // Define all possible games
     allGames = [
       {
-        "title": "skema1",
+        "title": "Pengenalan Objek",
         "icon": Icons.menu_book,
         "route": widget.quiz
             ? LevelPagetest(childId: '1', level: 1, idTema: activeTemaId!)
@@ -43,7 +43,7 @@ class _HomePageState extends State<HomePage> {
         "skemaId": '0'
       },
       {
-        "title": "skema2",
+        "title": "Pilih Objek",
         "icon": Icons.numbers,
         "route": widget.quiz
             ? GridPageQuiz(idTema: activeTemaId!)
@@ -51,7 +51,7 @@ class _HomePageState extends State<HomePage> {
         "skemaId": '1'
       },
       {
-        "title": "skema3",
+        "title": "Puzzle Jigsaw",
         "icon": Icons.category,
         "route": widget.quiz
             ? JigsawPuzzleScreenSkema3quiz(idTema: activeTemaId!)

@@ -1,5 +1,6 @@
 import 'package:app/auth/auth_service.dart';
 import 'package:app/models/Anak.dart';
+import 'package:app/provider/game_state_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
@@ -37,7 +38,6 @@ class _StorageDetailsState extends State<profilAnak> {
     final anakProvider = Provider.of<AnakProvider>(context);
     final currentAnak = anakProvider.currentAnak;
 
-    // Define constant IconData values for each card
     IconData namaIcon = Icons.person;
     IconData kelasIcon = Icons.school;
     IconData umurIcon = Icons.accessibility;
@@ -86,12 +86,7 @@ class _StorageDetailsState extends State<profilAnak> {
             StorageInfoCard(
               iconData: umurIcon,
               title: "Umur",
-              numOfFiles: '${currentAnak.id.toString()}',
-            ),
-            StorageInfoCard(
-              iconData: kelaminIcon,
-              title: "Kelamin",
-              numOfFiles: '${currentAnak.kelamin.toString()}',
+              numOfFiles: '${currentAnak.umur.toString()}',
             ),
             SizedBox(height: 10),
           ] else ...[

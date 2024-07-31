@@ -20,7 +20,15 @@ class StatistikWaktuAnak extends StatefulWidget {
 class StatistikWaktuAnakState extends State<StatistikWaktuAnak> {
   int parseTimeToSeconds(String time) {
     final parts = time.split(':');
-    return int.parse(parts[0]) * 60 + int.parse(parts[1]);
+    int minutes = int.parse(parts[0]);
+    int seconds = int.parse(parts[1]);
+    int totalSeconds = minutes * 60 + seconds;
+
+    // Subtract 5 minutes (300 seconds)
+    totalSeconds -= 300;
+
+    // If the result is negative or zero, return 11 seconds
+    return totalSeconds > 0 ? totalSeconds : 11;
   }
 
   String formatMinutes(double minutes) {
@@ -37,7 +45,7 @@ class StatistikWaktuAnakState extends State<StatistikWaktuAnak> {
     final filteredGameStates = gameStates
         .where((state) => state['id_anak'] == widget.parsedChildId)
         .toList();
-
+    print(filteredGameStates);
     final now = DateTime.now();
     final lastFiveDays =
         List<DateTime>.generate(5, (i) => now.subtract(Duration(days: i)));
@@ -101,7 +109,7 @@ class StatistikWaktuAnakState extends State<StatistikWaktuAnak> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "Average Times Last 5 Days",
+            "Rata-rata waktu 5 hari terakhir",
             style: Theme.of(context).textTheme.titleMedium,
           ),
           SizedBox(

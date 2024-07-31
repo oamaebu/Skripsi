@@ -49,10 +49,8 @@ class MyFiles extends StatelessWidget {
                 "Dashboard Guru",
                 style: TextStyle(
                   color: Colors.white,
-                  fontWeight:
-                      FontWeight.bold, // Change the color to your desired color
-                  fontSize: 20, // Change the font size to your desired size
-                  // You can also specify other properties like fontWeight, fontStyle, etc.
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
                 ),
               ),
             ),
@@ -73,7 +71,7 @@ class MyFiles extends StatelessWidget {
         SizedBox(height: defaultPadding),
         Responsive(
           mobile: FileInfoCardGridView(
-            crossAxisCount: _size.width < 650 ? 2 : 4,
+            crossAxisCount: _size.width < 650 ? 2 : 2,
             childAspectRatio: _size.width < 650 && _size.width > 350 ? 1.3 : 1,
           ),
           tablet: FileInfoCardGridView(),
@@ -101,12 +99,13 @@ class FileInfoCardGridView extends StatelessWidget {
     return GridView.builder(
       physics: NeverScrollableScrollPhysics(),
       shrinkWrap: true,
-      itemCount: 2, // We have two cards to display
+      itemCount: 2,
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: crossAxisCount,
         crossAxisSpacing: defaultPadding,
         mainAxisSpacing: defaultPadding,
-        childAspectRatio: childAspectRatio,
+        childAspectRatio: (MediaQuery.of(context).size.width / crossAxisCount) /
+            (MediaQuery.of(context).size.height / 4),
       ),
       itemBuilder: (context, index) {
         if (index == 0) {
@@ -128,9 +127,7 @@ class FileInfoCardGridView extends StatelessWidget {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                    builder: (context) =>
-                        ListSkemaPage()), // Replace with your ListLevelPage
+                MaterialPageRoute(builder: (context) => ListSkemaPage()),
               );
             },
             child: FileInfoCard(

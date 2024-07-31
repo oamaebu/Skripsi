@@ -64,7 +64,9 @@ class DatabaseHelper {
   String gameStateColIdAnak = 'id_anak';
   String gameStateColWaktu = 'waktu';
   String gameStateColTanggal = 'tanggal';
-  String gameStateColPoin = 'poin';
+  String gameStateColBenarMudah = 'BenarMudah';
+  String gameStateColBenarSedang = 'BenarSedang';
+  String gameStateColBenarSulit = 'BenarSulit';
   String gameStateColSkema = 'skema';
 
   Future<Database> get db async {
@@ -128,7 +130,7 @@ class DatabaseHelper {
     );
 
     await db.execute(
-      'CREATE TABLE $gameStateTable($gameStateColId INTEGER PRIMARY KEY, $gameStateColTanggal TEXT, $gameStateColSkema INTEGER, $gameStateColPoin INTEGER, $gameStateColWaktu TIME, $gameStateColIdAnak INTEGER, FOREIGN KEY ($gameStateColIdAnak) REFERENCES $anakTable ($anakColId))',
+      'CREATE TABLE $gameStateTable($gameStateColId INTEGER PRIMARY KEY, $gameStateColTanggal TEXT, $gameStateColSkema INTEGER, $gameStateColBenarMudah INTEGER, $gameStateColBenarSedang INTEGER , $gameStateColBenarSulit INTEGER, $gameStateColWaktu TIME, $gameStateColIdAnak INTEGER, FOREIGN KEY ($gameStateColIdAnak) REFERENCES $anakTable ($anakColId))',
     );
   }
 

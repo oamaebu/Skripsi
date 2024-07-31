@@ -88,8 +88,7 @@ class _AddAnakFormState extends State<AddAnakForm> {
               nama: nama,
               umur: umur,
               kelas: kelas,
-   
-              kelamin: 'hmm'
+              kelamin: '-'
             );
             anakProvider.addAnak(newAnak);
             Navigator.of(context).pop();

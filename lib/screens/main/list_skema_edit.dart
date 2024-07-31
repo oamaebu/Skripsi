@@ -4,7 +4,7 @@ import 'package:app/provider/gambar_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'package:app/models/isi_gambar.dart';
+
 
 class ListSkemaPage extends StatefulWidget {
   @override

@@ -1,9 +1,12 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math';
+import 'package:app/provider/anak_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:app/models/isi_gambar.dart';
 import 'package:app/provider/gambar_provider.dart';
+import 'package:app/provider/game_state_provider.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:audioplayers/audioplayers.dart';
 
@@ -18,11 +21,10 @@ class GridPage extends StatefulWidget {
 
 class _GridPageState extends State<GridPage>
     with SingleTickerProviderStateMixin {
+  late AudioPlayer _player;
+  bool _isPlayerInitialized = false;
   List<String> _images = [];
-  List<String> uniqueImages = [];
   List<String> _correctImages = [];
-  List<String> _wrongImages = [];
-  int grid = 6;
   int gridColumns = 3;
   int gridRows = 2;
   List<String> defaultImages = [
@@ -31,32 +33,79 @@ class _GridPageState extends State<GridPage>
     'assets/images/maskot.png'
   ];
   late String label = '';
-  List<bool> _clicked = List.generate(6, (index) => false);
+  late String suara = '';
+  late List<bool> _clicked;
   List<IsiGambar> allImages = [];
   int currentLevel = 1;
   int totalLevels = 3;
   late AnimationController _animationController;
-  List<bool> _showRedMark = List.generate(6, (index) => false);
+  late List<bool> _showRedMark;
   final AudioPlayer _audioPlayer = AudioPlayer();
+
+  Timer? _timer;
+  int _remainingTime = 300; // 5 minutes in seconds
+
+  late GameStateProvider _gameStateProvider;
 
   @override
   void initState() {
     super.initState();
+    _player = AudioPlayer();
+    _initPlayer();
+
     _fetchImages();
     _animationController = AnimationController(
       vsync: this,
       duration: Duration(milliseconds: 300),
     );
+
+    _gameStateProvider = Provider.of<GameStateProvider>(context, listen: false);
+  }
+
+  Future<void> _initPlayer() async {
+    if (suara.isNotEmpty) {
+      await _player.play(DeviceFileSource(suara));
+      setState(() {
+        _isPlayerInitialized = true;
+      });
+    } else {
+      print('Error: Sound file path is empty.');
+    }
   }
 
   @override
   void dispose() {
     _animationController.dispose();
     _audioPlayer.dispose();
+    _player.dispose();
+    _timer?.cancel();
     super.dispose();
   }
 
+  void _startTimer() {
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+      if (_remainingTime > 0) {
+        setState(() {
+          _remainingTime--;
+        });
+      } else {
+        _timer?.cancel();
+        _showTimeUpDialog();
+      }
+    });
+  }
+
+  void _resetLevel() {
+    setState(() {
+      _remainingTime = 300; // Reset time to 5 minutes
+      _clicked = List.generate(_images.length, (index) => false);
+      _showRedMark = List.generate(_images.length, (index) => false);
+    });
+    _startTimer();
+  }
+
   void _goToNextLevel() {
+    _timer?.cancel();
     if (currentLevel < totalLevels) {
       setState(() {
         currentLevel++;
@@ -70,28 +119,15 @@ class _GridPageState extends State<GridPage>
         }
       });
       _setupCurrentLevel(); // Call this to set up the new level
+      _startTimer(); // Restart the timer for the new level
     } else {
       _showGameCompletionDialog();
     }
   }
 
-  void _showLevelCompletionDialog(VoidCallback onContinue) {
-    AwesomeDialog(
-      context: context,
-      dialogType: DialogType.success,
-      animType: AnimType.bottomSlide,
-      title: 'Level Complete!',
-      desc: 'You have completed level $currentLevel!',
-      btnOkText: 'Next Level',
-      btnOkOnPress: () {
-        onContinue();
-      },
-      autoHide: Duration(seconds: 2), // Auto-hide after 2 seconds
-    )..show();
-  }
-
   void _goToPreviousLevel() {
     if (currentLevel > 1) {
+      _timer?.cancel();
       setState(() {
         currentLevel--;
         // Adjust grid size based on the level
@@ -104,7 +140,55 @@ class _GridPageState extends State<GridPage>
         }
       });
       _setupCurrentLevel(); // Call this to set up the new level
+      _startTimer(); // Restart the timer for the new level
     }
+  }
+
+  void _showTimeUpDialog() {
+    AwesomeDialog(
+      context: context,
+      dialogType: DialogType.error,
+      animType: AnimType.scale,
+      title: 'Time\'s Up!',
+      desc: 'You have run out of time.',
+      btnOkText: 'Try Again',
+      btnOkOnPress: () {
+        _resetLevel();
+      },
+    )..show();
+  }
+
+  void _showLevelCompletionDialog() {
+    AwesomeDialog(
+      context: context,
+      dialogType: DialogType.success,
+      animType: AnimType.bottomSlide,
+      title: 'Hebat!',
+      desc: 'Kamu berhasil menyelesaikan level ini!',
+      btnOkText: 'Lanjut',
+      btnOkColor: Colors.blue,
+      titleTextStyle: TextStyle(
+        color: Colors.blue[800],
+        fontSize: 28,
+        fontWeight: FontWeight.bold,
+      ),
+      descTextStyle: TextStyle(
+        color: Colors.blue[600],
+        fontSize: 18,
+      ),
+      dialogBackgroundColor: Colors.lightBlue[50],
+      borderSide: BorderSide(color: Colors.blue, width: 2),
+      width: 400,
+      buttonsBorderRadius: BorderRadius.circular(20),
+      barrierColor: Colors.black45,
+      dismissOnTouchOutside: false,
+      headerAnimationLoop: false,
+      buttonsTextStyle: TextStyle(color: Colors.white, fontSize: 18),
+      showCloseIcon: false,
+      btnOkOnPress: () {
+        _goToNextLevel();
+      },
+    )..show();
   }
 
   void _showGameCompletionDialog() {
@@ -112,11 +196,31 @@ class _GridPageState extends State<GridPage>
       context: context,
       dialogType: DialogType.success,
       animType: AnimType.scale,
-      title: 'Congratulations!',
-      desc: 'You have completed all levels!',
-      btnOkText: 'Finish',
+      title: 'Selamat!',
+      desc:
+          'Kamu telah menyelesaikan semua level!\n\nWaktu kamu: ${_formatTime(_remainingTime)}',
+      btnOkText: 'Selesai',
+      btnOkColor: Colors.blue,
+      titleTextStyle: TextStyle(
+        color: Colors.blue[800],
+        fontSize: 30,
+        fontWeight: FontWeight.bold,
+      ),
+      descTextStyle: TextStyle(
+        color: Colors.blue[600],
+        fontSize: 20,
+      ),
+      dialogBackgroundColor: Colors.lightBlue[50],
+      borderSide: BorderSide(color: Colors.blue, width: 3),
+      width: 420,
+      buttonsBorderRadius: BorderRadius.circular(20),
+      barrierColor: Colors.black54,
+      dismissOnTouchOutside: false,
+      headerAnimationLoop: false,
+      buttonsTextStyle: TextStyle(color: Colors.white, fontSize: 20),
+      showCloseIcon: false,
       btnOkOnPress: () {
-        Navigator.of(context).pop(); // Return to the previous screen
+        Navigator.of(context).pop();
       },
     )..show();
   }
@@ -181,10 +285,11 @@ class _GridPageState extends State<GridPage>
         allImages[index].gambar3,
       ];
       label = allImages[index].label;
+      suara = allImages[index].suara ?? '';
     } else {
       // If no unique images available for this level, use default images and label
       _correctImages = defaultImages.take(3).toList();
-      label = 'Default Label for Level $currentLevel';
+      label = 'Kucing ';
     }
 
     // Initialize clicked and showRedMark lists
@@ -192,6 +297,7 @@ class _GridPageState extends State<GridPage>
     _showRedMark = List.generate(_images.length, (index) => false);
 
     // Trigger UI update
+    _initPlayer();
     setState(() {});
   }
 
@@ -212,7 +318,7 @@ class _GridPageState extends State<GridPage>
     bool allCorrectSelected = correctIndices.length == 3;
 
     if (allCorrectSelected) {
-      _goToNextLevel();
+      _showLevelCompletionDialog();
     } else {
       // If any wrong image is selected, show red marks
       bool anyWrongSelected = _clicked.asMap().entries.any((entry) {
@@ -238,28 +344,16 @@ class _GridPageState extends State<GridPage>
     }
   }
 
-  void showNotEnoughImagesDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Game Over'),
-        content: Text('You have completed all available levels.'),
-        actions: <Widget>[
-          TextButton(
-            child: Text('OK'),
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-          ),
-        ],
-      ),
-    );
+  String _formatTime(int seconds) {
+    int minutes = seconds ~/ 60;
+    int remainingSeconds = seconds % 60;
+    return '${minutes.toString().padLeft(2 , '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
   }
 
   @override
   Widget build(BuildContext context) {
-    int asd = _images.length;
-    print(_images);
+    final anakProvider = Provider.of<AnakProvider>(context);
+    final currentAnak = anakProvider.currentAnak;
     final animation = Tween<Offset>(
       begin: Offset.zero,
       end: Offset(0.05, 0),
@@ -274,7 +368,10 @@ class _GridPageState extends State<GridPage>
             child: GestureDetector(
               onTap: () {
                 // Handle sound icon tap
-                print('Sound icon tapped');
+                if (_isPlayerInitialized) {
+                  _initPlayer();
+                  print('Sound icon tapped');
+                }
               },
               child: Icon(
                 Icons.volume_up,
@@ -284,13 +381,18 @@ class _GridPageState extends State<GridPage>
             ),
           ),
         ],
-        title: Text(
-          'Level $currentLevel',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Level $currentLevel',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
         ),
         backgroundColor: Colors.blue,
       ),
@@ -308,7 +410,7 @@ class _GridPageState extends State<GridPage>
             Column(
               children: [
                 Text(
-                  'Pilih Gambar', // Display the fixed text at the top
+                  'Pilih Gambar',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: MediaQuery.of(context).size.width * 0.05,
@@ -316,7 +418,7 @@ class _GridPageState extends State<GridPage>
                   ),
                 ),
                 Text(
-                  label ?? '', // Display isiGambar.label if not null
+                  label,
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: MediaQuery.of(context).size.width * 0.1,
