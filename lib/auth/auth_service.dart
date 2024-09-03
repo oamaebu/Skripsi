@@ -24,7 +24,7 @@ class AuthService {
 
   Future<bool> login(String username, String password) async {
     await Future.delayed(Duration(seconds: 1)); // Simulating async operation
-    if (password == 'admin123') {
+    if (password == '12345') {
       _loggedIn = true;
       _username = username;
       // Save login state

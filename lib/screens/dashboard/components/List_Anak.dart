@@ -41,6 +41,7 @@ class ListAnakState extends State<ListAnak> {
                 DataColumn(label: Text("Nama")),
                 DataColumn(label: Text("Kelas")),
                 DataColumn(label: Text("bermain")),
+                DataColumn(label: Text("Hapus")),
               ],
               rows: List.generate(
                 anakList.length,
@@ -77,6 +78,14 @@ class ListAnakState extends State<ListAnak> {
                             anakProvider.setCurrentAnak(anak);
                           },
                           child: Text('Main Sekarang'),
+                        ),
+                      ),
+                      DataCell(
+                        IconButton(
+                          icon: Icon(Icons.delete),
+                          onPressed: () {
+                            anakProvider.deleteAnak(anak.id!);
+                          },
                         ),
                       ),
                     ],

@@ -14,9 +14,9 @@ class ListSkema extends StatefulWidget {
 
 class ListSkemaState extends State<ListSkema> {
   final List<String> skemaNames = [
-    'statusSkema1',
-    'statusSkema2',
-    'statusSkema3'
+    'Pengenalan Objek ',
+    'Pilih Objek',
+    'Puzzle Jigzaw'
   ]; // Names of schemas
 
   @override

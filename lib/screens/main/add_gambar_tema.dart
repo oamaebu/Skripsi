@@ -54,7 +54,9 @@ class _AddIsiGambarPageState extends State<AddIsiGambarPagetema> {
   Future<void> _startRecording() async {
     try {
       Directory tempDir = await getTemporaryDirectory();
-      String path = '${tempDir.path}/recorded_audio.aac';
+      String fileName =
+          'recorded_audio_${DateTime.now().millisecondsSinceEpoch}.aac';
+      String path = '${tempDir.path}/$fileName';
       await _recorder!.startRecorder(toFile: path);
       setState(() {
         _isRecording = true;
@@ -144,7 +146,7 @@ class _AddIsiGambarPageState extends State<AddIsiGambarPagetema> {
         gambar1: _gambar1?.path ?? '',
         gambar2: _gambar2?.path ?? '',
         gambar3: _gambar3?.path ?? '',
-        suara: _suaraFile?.path ?? _suaraController.text,
+        suara: _recordedFilePath ?? _suaraFile?.path ?? _suaraController.text,
         status: _status,
       );
 

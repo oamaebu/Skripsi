@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:app/provider/gambar_provider.dart';
+import 'package:app/screens/main/edit_gambar.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -83,16 +84,38 @@ class _UbahStatusTemaPageState extends State<UbahStatusTemaPage> {
                               child: ListTile(
                                 leading: Image.file(File(isiGambar.gambar1)),
                                 title: Text(isiGambar.label),
-                                trailing: Switch(
-                                  value:
-                                      isiGambar.status, // Use the status field
-                                  onChanged: (value) {
-                                    setState(() {
-                                      isiGambar.status =
-                                          value; // Update the status
-                                    });
-                                    provider.updateIsiGambar(isiGambar);
-                                  },
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: Icon(Icons.edit),
+                                      onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                EditIsiGambarPage(
+                                                    isiGambar: isiGambar),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                    IconButton(
+                                      icon: Icon(Icons.delete),
+                                      onPressed: () {
+                                        provider.deleteIsiGambar(isiGambar.id);
+                                      },
+                                    ),
+                                    Switch(
+                                      value: isiGambar.status,
+                                      onChanged: (value) {
+                                        setState(() {
+                                          isiGambar.status = value;
+                                        });
+                                        provider.updateIsiGambar(isiGambar);
+                                      },
+                                    ),
+                                  ],
                                 ),
                               ),
                             );
